@@ -318,3 +318,89 @@ hr.sep{
     padding: 12px;
   }
 }
+
+
+/* ===== ダークテーマ配色改善 ===== */
+
+/* 背景 */
+body {
+  background: #0f172a; /* 黒ではなくネイビー寄り */
+  color: #e5e7eb;
+}
+
+/* コンテナ */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* カード */
+.card,
+.job-card,
+.application-card {
+  background: #111827; /* 背景より少し明るい */
+  border: 1px solid #1f2933;
+  color: #f9fafb;
+}
+
+/* タイトル */
+h1, h2, h3, .job-title {
+  color: #f9fafb;
+}
+
+/* 補助テキスト */
+.muted,
+.job-meta,
+.meta {
+  color: #9ca3af;
+}
+
+/* 入力欄 */
+.input,
+.select,
+.textarea {
+  background: #020617;
+  color: #f9fafb;
+  border: 1px solid #334155;
+}
+
+.input::placeholder {
+  color: #64748b;
+}
+
+/* ボタン */
+.btn {
+  background: #1e293b;
+  color: #f9fafb;
+  border: 1px solid #334155;
+}
+
+.btn.primary {
+  background: #2563eb;
+  border: none;
+  color: white;
+}
+
+.btn.secondary {
+  background: #020617;
+}
+
+/* ホバー */
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* チャット */
+.chat-message {
+  background: #020617;
+  color: #f9fafb;
+}
+
+.chat-message.admin {
+  background: #1e293b;
+}
+
+.chat-message.user {
+  background: #2563eb;
+  color: white;
+}
