@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAITOAPP - 新規登録</title>
+  <link rel="stylesheet" href="./css/base.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>BAITOAPP</h1>
+      <p class="muted">新規登録</p>
+    </header>
+
+    <main class="card" aria-labelledby="regTitle">
+      <h2 id="regTitle" class="card-title">アカウント作成</h2>
+
+      <form id="registerForm" class="form" novalidate>
+        <label class="label" for="name">名前</label>
+        <input class="input" type="text" id="name" autocomplete="name" required />
+
+        <label class="label" for="email">メールアドレス</label>
+        <input class="input" type="email" id="email" autocomplete="email" required />
+
+        <label class="label" for="password">パスワード（6文字以上）</label>
+        <input class="input" type="password" id="password" minlength="6" autocomplete="new-password" required />
+
+        <label class="label" for="role">アカウント種別</label>
+        <select id="role" class="select">
+          <option value="user" selected>一般ユーザー</option>
+          <option value="admin">管理者</option>
+        </select>
+
+        <button class="btn primary" type="submit">登録する</button>
+      </form>
+
+      <div class="row">
+        <a class="link" href="./index.html">ログインへ戻る</a>
+      </div>
+
+      <p id="msg" class="msg" aria-live="polite"></p>
+    </main>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+
+  <script type="module" src="./js/main-register.js"></script>
+</body>
+</html>

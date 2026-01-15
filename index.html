@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAITOAPP - ログイン</title>
+  <link rel="stylesheet" href="./css/base.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>BAITOAPP</h1>
+      <p class="muted">ログインして求人を探そう</p>
+    </header>
+
+    <main class="card" aria-labelledby="loginTitle">
+      <h2 id="loginTitle" class="card-title">ログイン</h2>
+
+      <form id="loginForm" class="form" novalidate>
+        <label class="label" for="email">メールアドレス</label>
+        <input class="input" type="email" id="email" autocomplete="email" required />
+
+        <label class="label" for="password">パスワード</label>
+        <input class="input" type="password" id="password" minlength="6" autocomplete="current-password" required />
+
+        <button class="btn primary" type="submit">ログイン</button>
+      </form>
+
+      <div class="row space-between">
+        <a class="link" href="./register.html">新規登録はこちら</a>
+      </div>
+
+      <p id="msg" class="msg" aria-live="polite"></p>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+
+  <script type="module" src="./js/main-login.js"></script>
+</body>
+</html>

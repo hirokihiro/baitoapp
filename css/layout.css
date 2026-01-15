@@ -1,0 +1,36 @@
+.container{
+  width:min(980px, 92vw);
+  margin:0 auto;
+  padding:28px 0 60px;
+}
+
+.header{ margin-bottom:18px; }
+.header h1{ margin:0; letter-spacing:.08em; }
+
+.grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:12px;
+}
+
+@media (min-width: 900px){
+  .grid.two{
+    grid-template-columns: 1.2fr .8fr;
+    align-items:start;
+  }
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.space-between{ justify-content:space-between; }
+
+.footer{ margin-top:18px; }
+hr.sep{
+  border:none;
+  border-top:1px solid var(--border);
+  margin:14px 0;
+}

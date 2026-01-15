@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAITOAPP</title>
+  <link rel="stylesheet" href="./css/base.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header row space-between">
+      <div>
+        <h1>BAITOAPP</h1>
+        <p id="welcome" class="muted"></p>
+      </div>
+      <div class="row" style="gap:8px;">
+        <!-- ★一般ユーザーには非表示にするため id 付与 -->
+        <a id="adminLink" class="link" href="./admin.html">管理者画面</a>
+        <button id="logoutBtn" class="btn">ログアウト</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- 求人検索・一覧 -->
+      <section class="card" aria-labelledby="searchTitle">
+        <h2 id="searchTitle" class="card-title">求人を探す</h2>
+
+        <div class="row" style="gap:8px; flex-wrap:wrap;">
+          <input id="q" class="input" placeholder="例：カフェ / 駅前 / 高時給" />
+          <select id="areaFilter" class="select">
+            <option value="">エリア（すべて）</option>
+            <option value="東京">東京</option>
+            <option value="大阪">大阪</option>
+            <option value="名古屋">名古屋</option>
+            <option value="福岡">福岡</option>
+            <option value="大学周辺">大学周辺</option>
+          </select>
+          <select id="sort" class="select">
+            <option value="new">新着順</option>
+            <option value="wage_desc">時給が高い順</option>
+            <option value="wage_asc">時給が低い順</option>
+          </select>
+        </div>
+
+        <div class="row" style="gap:8px; margin-top:10px; flex-wrap:wrap;">
+          <button id="showAllBtn" class="btn">すべて</button>
+          <button id="showFavBtn" class="btn">♡ お気に入り</button>
+        </div>
+
+        <hr class="sep" />
+
+        <p id="jobsMsg" class="msg" aria-live="polite"></p>
+        <div id="jobsWrap"></div>
+
+        <p class="muted" style="margin-top:12px;">データ：Firestoreで保存</p>
+      </section>
+
+      <!-- 応募履歴 -->
+      <section class="card" aria-labelledby="appsTitle">
+        <h2 id="appsTitle" class="card-title">応募履歴</h2>
+        <p id="appsMsg" class="msg" aria-live="polite"></p>
+        <div id="appsWrap"></div>
+      </section>
+
+      <!-- チャット（応募ごと） -->
+      <section class="card" aria-labelledby="chatTitle">
+        <h2 id="chatTitle" class="card-title">チャット（応募ごと）</h2>
+        <p class="muted">応募履歴の「チャット」ボタンから開きます。</p>
+
+        <div id="chatMeta" class="muted" style="margin:8px 0;"></div>
+        <div id="chatWrap" style="height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;"></div>
+
+        <div class="row" style="gap:8px; margin-top:10px;">
+          <input id="chatInput" class="input" placeholder="メッセージ…" />
+          <button id="chatSend" class="btn primary" type="button">送信</button>
+        </div>
+      </section>
+
+      <!-- プロフィール -->
+      <section class="card" aria-labelledby="profileTitle">
+        <h2 id="profileTitle" class="card-title">プロフィール</h2>
+        <p id="profileMsg" class="msg" aria-live="polite"></p>
+
+        <form id="profileForm" class="form" novalidate>
+          <label class="label" for="profileName">名前</label>
+          <input class="input" id="profileName" required />
+
+          <label class="label" for="profileEmail">メール（変更不可）</label>
+          <input class="input" id="profileEmail" readonly />
+
+          <label class="label" for="profilePhone">電話番号（任意）</label>
+          <input class="input" id="profilePhone" placeholder="例：090-1234-5678" />
+
+          <label class="label" for="profileBio">ひとこと（任意）</label>
+          <textarea class="textarea" id="profileBio" placeholder="例：週2〜OK、夕方希望です"></textarea>
+
+          <div class="row" style="gap:8px;">
+            <button class="btn primary" type="submit">保存</button>
+            <button id="profileReset" class="btn" type="button">元に戻す</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <!-- 応募確認モーダル -->
+  <div id="applyModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="applyTitle">
+    <div class="modal-backdrop" data-close="1"></div>
+    <div class="modal-card">
+      <h3 id="applyTitle" class="card-title">応募確認</h3>
+      <p id="applyText" class="muted"></p>
+      <div class="row" style="gap:8px; justify-content:flex-end; margin-top:12px;">
+        <button id="applyCancel" class="btn" type="button">キャンセル</button>
+        <button id="applyOk" class="btn primary" type="button">応募する</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+
+  <script type="module" src="./js/main-app.js"></script>
+</body>
+</html>

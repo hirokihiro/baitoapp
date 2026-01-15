@@ -1,0 +1,24 @@
+:root{
+  --bg:#0b0f14;
+  --card:#111826;
+  --border:#1f2a3a;
+  --text:#e7eefc;
+  --muted:#9db0d0;
+  --primary:#4ea1ff;
+  --danger:#ff5c7a;
+  --ok:#3be09f;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  background: radial-gradient(1200px 600px at 20% 0%, rgba(78,161,255,.18), transparent 55%),
+              radial-gradient(1000px 600px at 80% 20%, rgba(59,224,159,.12), transparent 60%),
+              var(--bg);
+  color:var(--text);
+}
+.muted{ color:var(--muted); }
+a{ color:inherit; }

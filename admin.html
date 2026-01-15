@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAITOAPP - 管理者</title>
+  <link rel="stylesheet" href="./css/base.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>BAITOAPP</h1>
+      <p class="muted">管理者：求人の投稿/編集/削除</p>
+      <div class="row space-between">
+        <a class="link" href="./app.html">ユーザー画面へ</a>
+        <button id="logoutBtn" class="btn">ログアウト</button>
+      </div>
+    </header>
+
+    <main class="card">
+      <h2 class="card-title">管理者画面</h2>
+      <p id="adminMsg" class="msg" aria-live="polite"></p>
+
+      <section class="card" style="margin-top:12px;">
+        <h3>求人を投稿</h3>
+        <form id="jobForm" class="form" novalidate>
+          <label class="label" for="title">タイトル</label>
+          <input class="input" id="title" required />
+
+          <label class="label" for="shop">店舗名</label>
+          <input class="input" id="shop" required />
+
+          <label class="label" for="area">エリア</label>
+          <select class="select" id="area" required>
+            <option value="" selected disabled>選択してください</option>
+            <option value="東京">東京</option>
+            <option value="大阪">大阪</option>
+            <option value="名古屋">名古屋</option>
+            <option value="福岡">福岡</option>
+          </select>
+
+          <label class="label" for="wage">時給（円）</label>
+          <input class="input" id="wage" type="number" min="1" step="1" required />
+
+          <label class="label" for="shift">シフト</label>
+          <input class="input" id="shift" placeholder="例：週2日 / 17:00-22:00" required />
+
+          <label class="label" for="tagsText">タグ（カンマ区切り）</label>
+          <input class="input" id="tagsText" placeholder="未経験OK, 駅近" />
+
+          <label class="label" for="description">説明</label>
+          <textarea class="textarea" id="description" required></textarea>
+
+          <div class="row" style="gap:8px;">
+            <button class="btn primary" type="submit">投稿する</button>
+            <button id="resetBtn" class="btn" type="button">クリア</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" style="margin-top:12px;">
+        <h3>求人一覧（編集/削除）</h3>
+        <div class="row" style="gap:8px; flex-wrap:wrap;">
+          <input id="adminQ" class="input" placeholder="検索（タイトル/店舗/タグ）" />
+          <select id="adminSort" class="select">
+            <option value="new">新着順</option>
+            <option value="wage_desc">時給が高い順</option>
+            <option value="wage_asc">時給が低い順</option>
+          </select>
+        </div>
+
+        <div id="jobsWrap" style="margin-top:10px;"></div>
+        <p id="jobsMsg" class="msg" aria-live="polite"></p>
+      </section>
+
+      <section class="card" style="margin-top:12px;">
+        <h3>応募者一覧（求人ごと）</h3>
+        <p class="muted">求人の「応募者を見る」ボタンを押すと、応募者が表示されます。</p>
+        <p id="appsMsgAdmin" class="msg" aria-live="polite"></p>
+        <div id="appsWrapAdmin"></div>
+      </section>
+
+      <section class="card" style="margin-top:12px;">
+        <h3>応募者プロフィール</h3>
+        <p class="muted">応募者一覧で「プロフィール」を押すと表示されます。</p>
+
+        <p id="profileMsgAdmin" class="msg" aria-live="polite"></p>
+
+        <div id="profileWrapAdmin" class="job-card">
+          <p class="muted">まだ選択されていません。</p>
+        </div>
+      </section>
+
+
+      <section class="card" style="margin-top:12px;">
+        <h3>応募者チャット</h3>
+        <p class="muted">応募者一覧で「チャット」を押すとここに表示されます。</p>
+
+        <div id="chatMetaAdmin" class="muted" style="margin:8px 0;"></div>
+        <div id="chatWrapAdmin" style="height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;"></div>
+
+        <div class="row" style="gap:8px; margin-top:10px;">
+          <input id="chatInputAdmin" class="input" placeholder="メッセージ…" />
+          <button id="chatSendAdmin" class="btn primary" type="button">送信</button>
+        </div>
+      </section>
+
+
+    </main>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+
+  <script type="module" src="./js/main-admin.js"></script>
+</body>
+</html>
