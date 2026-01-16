@@ -12,20 +12,35 @@
 <body>
   <div class="container">
     <header class="header row space-between">
-      <div>
-        <h1>BAITOAPP</h1>
-        <p id="welcome" class="muted"></p>
+      <div class="row" style="gap:10px; align-items:center;">
+        <button id="menuBtn" class="hamburger" type="button" aria-label="メニューを開く" aria-controls="mobileMenu" aria-expanded="false">
+          ☰
+        </button>
+
+        <div>
+          <h1>BAITOAPP</h1>
+          <p id="welcome" class="muted"></p>
+        </div>
       </div>
+
       <div class="row" style="gap:8px;">
-        <!-- ★一般ユーザーには非表示にするため id 付与 -->
         <a id="adminLink" class="link" href="./admin.html">管理者画面</a>
         <button id="logoutBtn" class="btn">ログアウト</button>
       </div>
     </header>
 
+    <!-- モバイル用メニュー（スマホ時だけ表示） -->
+    <div id="menuBackdrop" class="menu-backdrop hidden" data-close="1" aria-hidden="true"></div>
+    <nav id="mobileMenu" class="mobile-menu hidden" aria-label="ページメニュー">
+      <button type="button" data-target="jobs">求人一覧</button>
+      <button type="button" data-target="applications">応募履歴</button>
+      <button type="button" data-target="chat">チャット</button>
+      <button type="button" data-target="profile">プロフィール</button>
+    </nav>
+
     <div class="grid">
       <!-- 求人検索・一覧 -->
-      <section class="card" aria-labelledby="searchTitle">
+      <section class="card" data-view="jobs" aria-labelledby="searchTitle">
         <h2 id="searchTitle" class="card-title">求人を探す</h2>
 
         <div class="row" style="gap:8px; flex-wrap:wrap;">
@@ -46,8 +61,8 @@
         </div>
 
         <div class="row" style="gap:8px; margin-top:10px; flex-wrap:wrap;">
-          <button id="showAllBtn" class="btn">すべて</button>
-          <button id="showFavBtn" class="btn">♡ お気に入り</button>
+          <button id="showAllBtn" class="btn" type="button">すべて</button>
+          <button id="showFavBtn" class="btn" type="button">♡ お気に入り</button>
         </div>
 
         <hr class="sep" />
@@ -59,19 +74,19 @@
       </section>
 
       <!-- 応募履歴 -->
-      <section class="card" aria-labelledby="appsTitle">
+      <section class="card" data-view="applications" aria-labelledby="appsTitle">
         <h2 id="appsTitle" class="card-title">応募履歴</h2>
         <p id="appsMsg" class="msg" aria-live="polite"></p>
         <div id="appsWrap"></div>
       </section>
 
       <!-- チャット（応募ごと） -->
-      <section class="card" aria-labelledby="chatTitle">
-        <h2 id="chatTitle" class="card-title">チャット（応募ごと）</h2>
+      <section class="card" data-view="chat" aria-labelledby="chatTitle">
+        <h2 id="chatTitle" class="card-title">チャット</h2>
         <p class="muted">応募履歴の「チャット」ボタンから開きます。</p>
 
         <div id="chatMeta" class="muted" style="margin:8px 0;"></div>
-        <div id="chatWrap" style="height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;"></div>
+        <div id="chatWrap" class="chat-wrap" style="height:260px; overflow:auto; padding:10px;"></div>
 
         <div class="row" style="gap:8px; margin-top:10px;">
           <input id="chatInput" class="input" placeholder="メッセージ…" />
@@ -80,7 +95,7 @@
       </section>
 
       <!-- プロフィール -->
-      <section class="card" aria-labelledby="profileTitle">
+      <section class="card" data-view="profile" aria-labelledby="profileTitle">
         <h2 id="profileTitle" class="card-title">プロフィール</h2>
         <p id="profileMsg" class="msg" aria-live="polite"></p>
 
