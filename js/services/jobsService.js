@@ -1,7 +1,15 @@
+// js/services/jobsService.js
 import { db } from "../firebase.js";
 import {
-  collection, addDoc, doc, updateDoc, deleteDoc, getDocs,
-  query, orderBy, serverTimestamp
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 export function normalizeTags(text) {
@@ -38,9 +46,13 @@ export async function removeJob(jobId) {
 
 export async function listJobs(sort = "new") {
   let q;
-  if (sort === "wage_desc") q = query(collection(db, "jobs"), orderBy("wage", "desc"));
-  else if (sort === "wage_asc") q = query(collection(db, "jobs"), orderBy("wage", "asc"));
-  else q = query(collection(db, "jobs"), orderBy("createdAt", "desc"));
+  if (sort === "wage_desc") {
+    q = query(collection(db, "jobs"), orderBy("wage", "desc"));
+  } else if (sort === "wage_asc") {
+    q = query(collection(db, "jobs"), orderBy("wage", "asc"));
+  } else {
+    q = query(collection(db, "jobs"), orderBy("createdAt", "desc"));
+  }
 
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));

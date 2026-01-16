@@ -68,13 +68,11 @@ function isMobile() {
 function setView(next) {
   currentView = next;
 
-  // mobile：active だけ表示
   if (isMobile()) {
     for (const sec of viewSections) {
       sec.classList.toggle("active", sec.dataset.view === next);
     }
   } else {
-    // desktop：全部表示（active制御を外す）
     for (const sec of viewSections) sec.classList.remove("active");
   }
 }
@@ -108,7 +106,6 @@ mobileMenu?.querySelectorAll("button[data-target]")?.forEach((btn) => {
   });
 });
 
-// 画面回転/リサイズ対策
 window.addEventListener("resize", () => {
   setView(currentView);
   if (!isMobile()) closeMenu();
@@ -142,7 +139,17 @@ showFavBtn?.addEventListener("click", () => {
   paint();
 });
 
-[qEl, sortEl, areaFilterEl].forEach((el) => el?.addEventListener("input", paint));
+/* ✅ ここが重要修正
+   inputはテキスト入力(q)だけ
+   select(sort/area)はchangeで反映
+*/
+qEl?.addEventListener("input", paint);
+
+areaFilterEl?.addEventListener("change", () => {
+  // selectの値が確実に取れる
+  paint();
+});
+
 sortEl?.addEventListener("change", async () => {
   await refreshJobs();
   paint();
@@ -213,7 +220,6 @@ profileForm?.addEventListener("submit", async (e) => {
     toast("プロフィールを保存しました");
     profileSnapshot = { ...(profileSnapshot || {}), name, phone, bio };
 
-    // スマホなら保存後もプロフィール画面を維持
     if (isMobile()) setView("profile");
   } catch (err) {
     console.error(err);
@@ -239,13 +245,10 @@ watchAuth(async (user) => {
   uid = user.uid;
   profile = await fetchMyProfile();
 
-  // welcome
   welcomeEl.textContent = profile?.name ? `ようこそ、${profile.name}さん` : "";
 
-  // adminリンクは admin の時だけ表示
   if (adminLink) adminLink.style.display = profile?.role === "admin" ? "" : "none";
 
-  // profile form reflect
   profileSnapshot = profile ? { ...profile } : null;
   if (profileName) profileName.value = profile?.name || "";
   if (profileEmail) profileEmail.value = user?.email || "";
@@ -255,7 +258,6 @@ watchAuth(async (user) => {
   await Promise.all([refreshJobs(), refreshFavorites(), refreshApplications()]);
   paint();
 
-  // スマホは初期「求人一覧」だけ表示
   setView("jobs");
 });
 
@@ -263,6 +265,12 @@ async function refreshJobs() {
   jobsMsg.textContent = "読み込み中...";
   try {
     allJobs = await listJobs(sortEl?.value || "new");
+
+    // （任意）デバッグ：必要なら残してOK
+    // console.log("allJobs count:", allJobs.length);
+    // console.log("areas:", allJobs.map(j => j.area));
+    // console.log("selected area:", areaFilterEl?.value);
+
     jobsMsg.textContent = "";
   } catch (e) {
     console.error(e);
@@ -294,7 +302,6 @@ async function refreshApplications() {
         if (isMobile()) setView("applications");
       },
       onOpenChat: async (app) => {
-        // 応募IDを conversationId として使う想定（あなたの既存仕様）
         currentChatAppId = app.id;
 
         await ensureConversation({
@@ -313,7 +320,6 @@ async function refreshApplications() {
 
         await markRead({ applicationId: app.id, viewerRole: "user" });
 
-        // ★スマホなら自動で「チャット」画面へ移動（ここが一番大事）
         if (isMobile()) setView("chat");
       }
     });
@@ -325,11 +331,11 @@ async function refreshApplications() {
 
 function filteredJobs() {
   const q = (qEl?.value || "").trim().toLowerCase();
-  const area = areaFilterEl?.value || "";
+  const area = (areaFilterEl?.value || "").trim();
 
   let list = allJobs.slice();
 
-  if (area) list = list.filter((j) => String(j.area || "") === area);
+  if (area) list = list.filter((j) => String(j.area || "").trim() === area);
 
   if (q) {
     list = list.filter((j) => {
@@ -343,9 +349,9 @@ function filteredJobs() {
   }
 
   if (showingFav) list = list.filter((j) => favorites.has(j.id));
-
   return list;
 }
+
 
 function paint() {
   const list = filteredJobs();

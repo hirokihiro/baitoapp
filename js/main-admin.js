@@ -1,19 +1,35 @@
 // js/main-admin.js
 import { watchAuth, logout, fetchMyProfile } from "./services/authService.js";
-import { listJobs } from "./services/jobsService.js";
-import { getApplicationCountsByJob, listApplicationsByJobId } from "./services/applicationsService.js";
+import {
+  listJobs,
+  createJob,
+  normalizeTags
+} from "./services/jobsService.js";
+import {
+  getApplicationCountsByJob,
+  listApplicationsByJobId
+} from "./services/applicationsService.js";
 import { renderApplications } from "./ui/renderApplications.js";
 import { toast } from "./ui/toast.js";
 
-// chat
-import { ensureConversation, watchMessages, sendMessage, markRead } from "./services/chatService.js";
+// ===== chat =====
+import {
+  ensureConversation,
+  watchMessages,
+  sendMessage,
+  markRead
+} from "./services/chatService.js";
 import { renderChat } from "./ui/renderChat.js";
 
-// profile (既に作ってあるやつを流用)
+// ===== profile =====
 import { getUserProfile } from "./services/profileService.js";
 
+// ===== DOM =====
 const logoutBtn = document.getElementById("logoutBtn");
 const adminMsg = document.getElementById("adminMsg");
+
+const jobForm = document.getElementById("jobForm");
+const resetBtn = document.getElementById("resetBtn");
 
 const jobsWrap = document.getElementById("jobsWrap");
 const jobsMsg = document.getElementById("jobsMsg");
@@ -21,19 +37,18 @@ const jobsMsg = document.getElementById("jobsMsg");
 const appsMsgAdmin = document.getElementById("appsMsgAdmin");
 const appsWrapAdmin = document.getElementById("appsWrapAdmin");
 
-// chat UI（admin.html にある前提）
+const profileMsgAdmin = document.getElementById("profileMsgAdmin");
+const profileWrapAdmin = document.getElementById("profileWrapAdmin");
+
+// chat UI
 const chatMetaAdmin = document.getElementById("chatMetaAdmin");
 const chatWrapAdmin = document.getElementById("chatWrapAdmin");
 const chatInputAdmin = document.getElementById("chatInputAdmin");
 const chatSendAdmin = document.getElementById("chatSendAdmin");
 
-// profile UI（今回追加）
-const profileMsgAdmin = document.getElementById("profileMsgAdmin");
-const profileWrapAdmin = document.getElementById("profileWrapAdmin");
-
+// ===== state =====
 let uid = null;
 let profile = null;
-
 let allJobs = [];
 let countsMap = new Map();
 
@@ -41,30 +56,13 @@ let countsMap = new Map();
 let currentChatAppId = null;
 let unSubChatAdmin = null;
 
+// ===== logout =====
 logoutBtn?.addEventListener("click", async () => {
   await logout();
   location.href = "./index.html";
 });
 
-// 管理者送信
-chatSendAdmin?.addEventListener("click", async () => {
-  const text = (chatInputAdmin?.value || "").trim();
-  if (!text || !currentChatAppId || !uid) return;
-
-  try {
-    await sendMessage({
-      applicationId: currentChatAppId,
-      senderUid: uid,
-      senderRole: "admin",
-      text
-    });
-    chatInputAdmin.value = "";
-  } catch (e) {
-    console.error(e);
-    toast("送信に失敗しました");
-  }
-});
-
+// ===== auth =====
 watchAuth(async (user) => {
   if (!user) {
     location.href = "./index.html";
@@ -84,6 +82,49 @@ watchAuth(async (user) => {
   await refresh();
 });
 
+// ===== 求人投稿 =====
+jobForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  try {
+    const title = document.getElementById("title").value.trim();
+    const shop = document.getElementById("shop").value.trim();
+    const area = document.getElementById("area").value;
+    const wage = document.getElementById("wage").value;
+    const shift = document.getElementById("shift").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const tagsText = document.getElementById("tagsText").value;
+
+    if (!title || !shop || !area || !wage || !shift || !description) {
+      toast("未入力の項目があります");
+      return;
+    }
+
+    const tags = normalizeTags(tagsText);
+
+    await createJob({
+      title,
+      shop,
+      area,
+      wage,
+      shift,
+      description,
+      tags
+    });
+
+    toast("求人を投稿しました");
+    jobForm.reset();
+
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    toast("求人の投稿に失敗しました");
+  }
+});
+
+resetBtn?.addEventListener("click", () => jobForm.reset());
+
+// ===== 一覧取得 =====
 async function refresh() {
   jobsMsg.textContent = "読み込み中...";
   try {
@@ -97,6 +138,7 @@ async function refresh() {
   }
 }
 
+// ===== 求人一覧 =====
 function renderAdminJobs() {
   jobsWrap.innerHTML = "";
 
@@ -115,18 +157,22 @@ function renderAdminJobs() {
     const count = countsMap.get(job.id) || 0;
 
     card.innerHTML = `
-      <p class="job-title">${escapeHtml(job.title || "")}</p>
-      <div class="job-meta">店舗：${escapeHtml(job.shop || "")}</div>
-      <div class="job-meta">エリア：${escapeHtml(job.area || "")}</div>
+      <p class="job-title">${escapeHtml(job.title)}</p>
+      <div class="job-meta">店舗：${escapeHtml(job.shop)}</div>
+      <div class="job-meta">エリア：${escapeHtml(job.area)}</div>
+      <div class="job-meta">時給：${job.wage}円</div>
       <div class="job-meta">応募者数：<b>${count}</b>人</div>
-      <div class="row" style="gap:8px; margin-top:10px;">
+      <div class="row" style="gap:8px; margin-top:8px;">
         <button class="btn primary" data-show="${job.id}">応募者を見る</button>
       </div>
     `;
 
-    card.querySelector(`[data-show="${job.id}"]`)?.addEventListener("click", async () => {
-      await showApplicants(job.id, job.title, job.shop);
-    });
+    card.querySelector(`[data-show="${job.id}"]`)?.addEventListener(
+      "click",
+      async () => {
+        await showApplicants(job);
+      }
+    );
 
     list.appendChild(card);
   }
@@ -134,95 +180,50 @@ function renderAdminJobs() {
   jobsWrap.appendChild(list);
 }
 
-async function showApplicants(jobId, title, shop) {
+// ===== 応募者一覧 =====
+async function showApplicants(job) {
   appsMsgAdmin.textContent = "読み込み中...";
   appsWrapAdmin.innerHTML = "";
-  if (profileMsgAdmin) profileMsgAdmin.textContent = "";
-  if (profileWrapAdmin) profileWrapAdmin.innerHTML = `<p class="muted">まだ選択されていません。</p>`;
+  profileWrapAdmin.innerHTML = `<p class="muted">まだ選択されていません。</p>`;
+  chatWrapAdmin.innerHTML = "";
 
   try {
-    const apps = await listApplicationsByJobId(jobId);
+    const apps = await listApplicationsByJobId(job.id);
+    appsMsgAdmin.textContent = `${job.title} の応募者：${apps.length}人`;
 
-    appsMsgAdmin.textContent = `${title || ""}（${shop || ""}）の応募者：${apps.length}人`;
-
-    // 応募者一覧を描画（チャット＋プロフィールボタンを付ける）
     renderApplications(appsWrapAdmin, apps, {
       showUid: true,
-      onOpenChat: async (app) => openChat(app),
-      // ★プロフィールボタンを追加するため、renderApplications に少しだけ手を入れたくない場合は、
-      // ここでは「チャット」をプロフィール用途にせず、下で追加のボタンを差し込む方式にします。
+      onOpenChat: (app) => openChat(app),
+      onShowProfile: (app) => showApplicantProfile(app.uid)
     });
-
-    // renderApplications の中の各カードに「プロフィール」ボタンを後付け
-    // （renderApplications をいじらなくていい作戦）
-    addProfileButtons(appsWrapAdmin, apps);
-
   } catch (e) {
     console.error(e);
-    appsMsgAdmin.textContent = "応募者一覧の取得に失敗しました。";
-    toast("応募者一覧の取得に失敗しました");
+    appsMsgAdmin.textContent = "応募者の取得に失敗しました。";
   }
 }
 
-function addProfileButtons(container, apps) {
-  // renderApplications が作った .job-card を順に取って、同じ順番でボタンを追加
-  const cards = container.querySelectorAll(".job-card");
-  cards.forEach((card, idx) => {
-    const app = apps[idx];
-    if (!app) return;
-
-    // すでにボタンがあれば追加しない
-    if (card.querySelector("[data-profile]")) return;
-
-    const row = card.querySelector(".row");
-    if (!row) return;
-
-    const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.textContent = "プロフィール";
-    btn.setAttribute("type", "button");
-    btn.setAttribute("data-profile", "1");
-
-    btn.addEventListener("click", async () => {
-      await showApplicantProfile(app.uid);
-    });
-
-    row.appendChild(btn);
-  });
-}
-
+// ===== プロフィール表示 =====
 async function showApplicantProfile(applicantUid) {
-  if (!profileWrapAdmin) return;
-  if (!applicantUid) return;
-
-  if (profileMsgAdmin) profileMsgAdmin.textContent = "読み込み中...";
+  profileMsgAdmin.textContent = "読み込み中...";
 
   try {
     const p = await getUserProfile(applicantUid);
 
-    if (!p) {
-      if (profileMsgAdmin) profileMsgAdmin.textContent = "プロフィールが見つかりません。";
-      profileWrapAdmin.innerHTML = `<p class="muted">プロフィールが見つかりません。</p>`;
-      return;
-    }
-
-    if (profileMsgAdmin) profileMsgAdmin.textContent = "";
-
+    profileMsgAdmin.textContent = "";
     profileWrapAdmin.innerHTML = `
-      <p class="job-title">${escapeHtml(p.name || "（名前未設定）")}</p>
-      <div class="job-meta">UID：${escapeHtml(applicantUid)}</div>
-      <div class="job-meta">メール：${escapeHtml(p.email || "（未保存）")}</div>
-      <div class="job-meta">電話：${escapeHtml(p.phone || "（未設定）")}</div>
-      <div class="job-meta">ひとこと：${escapeHtml(p.bio || "（未設定）")}</div>
-      <div class="job-meta">role：${escapeHtml(p.role || "user")}</div>
+      <p class="job-title">${escapeHtml(p?.name || "未設定")}</p>
+      <div class="job-meta">メール：${escapeHtml(p?.email || "")}</div>
+      <div class="job-meta">電話：${escapeHtml(p?.phone || "")}</div>
+      <div class="job-meta">ひとこと：${escapeHtml(p?.bio || "")}</div>
+      <div class="job-meta">role：${escapeHtml(p?.role || "user")}</div>
     `;
   } catch (e) {
     console.error(e);
-    if (profileMsgAdmin) profileMsgAdmin.textContent = "プロフィールの取得に失敗しました。";
-    profileWrapAdmin.innerHTML = `<p class="muted">プロフィールの取得に失敗しました。</p>`;
+    profileMsgAdmin.textContent = "プロフィール取得失敗";
   }
 }
 
+// ===== チャット =====
 async function openChat(app) {
   currentChatAppId = app.id;
 
@@ -232,19 +233,31 @@ async function openChat(app) {
     applicantUid: app.uid
   });
 
-  if (chatMetaAdmin) {
-    chatMetaAdmin.textContent = `${app.jobTitle || ""}（${app.shop || ""}）/ 応募者:${app.uid || ""}`;
-  }
+  chatMetaAdmin.textContent = `${app.jobTitle} / 応募者：${app.uid}`;
 
   if (unSubChatAdmin) unSubChatAdmin();
   unSubChatAdmin = watchMessages(app.id, (msgs) => {
-    if (!chatWrapAdmin) return;
     renderChat({ wrapEl: chatWrapAdmin, meUid: uid, messages: msgs });
   });
 
   await markRead({ applicationId: app.id, viewerRole: "admin" });
 }
 
+chatSendAdmin?.addEventListener("click", async () => {
+  const text = chatInputAdmin.value.trim();
+  if (!text || !currentChatAppId) return;
+
+  await sendMessage({
+    applicationId: currentChatAppId,
+    senderUid: uid,
+    senderRole: "admin",
+    text
+  });
+
+  chatInputAdmin.value = "";
+});
+
+// ===== util =====
 function escapeHtml(s) {
   return String(s)
     .replaceAll("&", "&amp;")
