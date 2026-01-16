@@ -404,3 +404,198 @@ h1, h2, h3, .job-title {
   background: #2563eb;
   color: white;
 }
+
+/* =========================
+   Pro Dark Theme (Drop-in)
+   ========================= */
+
+/* 1) Design tokens */
+:root{
+  --bg: #0b1220;          /* 画面全体 */
+  --surface: #0f172a;     /* カード/面 */
+  --surface-2: #111c33;   /* もう1段明るい面 */
+  --border: #22314a;      /* 枠線 */
+  --border-2: #2b3b58;
+
+  --text: #eaf0ff;        /* メイン文字 */
+  --muted: #a7b2c7;       /* 補助文字 */
+  --muted-2: #7f8aa3;     /* さらに薄い */
+
+  --primary: #4f8cff;     /* アクセント(青) */
+  --primary-2: #2f6fff;
+  --danger: #ff5d5d;
+
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --radius: 16px;
+}
+
+/* 2) Page base */
+body{
+  background: radial-gradient(1200px 600px at 20% 0%, rgba(79,140,255,.16), transparent 60%),
+              radial-gradient(900px 500px at 80% 20%, rgba(47,111,255,.10), transparent 55%),
+              var(--bg);
+  color: var(--text);
+}
+
+/* コンテナは読みやすい幅に制限 */
+.container{
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+/* 3) Typography hierarchy */
+h1, h2, h3{
+  letter-spacing: .2px;
+}
+h1{ font-size: 26px; }
+h2{ font-size: 18px; }
+h3{ font-size: 16px; }
+.muted{ color: var(--muted); }
+.msg{ color: var(--muted); }
+
+/* 4) Surfaces (cards) */
+.card,
+.job-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.card{
+  padding: 16px;
+}
+
+.job-card{
+  padding: 14px;
+  margin: 12px 0;
+}
+
+/* 余計な真っ白背景になってる要素があれば潰す */
+.job-card *{
+  color: inherit;
+}
+
+/* 5) Inputs */
+.input,
+.select,
+.textarea{
+  width: 100%;
+  background: rgba(2,6,23,.65);
+  color: var(--text);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input::placeholder{ color: var(--muted-2); }
+.input:focus,
+.select:focus,
+.textarea:focus{
+  border-color: rgba(79,140,255,.65);
+  box-shadow: 0 0 0 4px rgba(79,140,255,.15);
+}
+
+/* 6) Buttons */
+.btn{
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: transform .06s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+}
+
+.btn:hover{
+  background: rgba(255,255,255,.07);
+  border-color: rgba(79,140,255,.35);
+}
+
+.btn:active{
+  transform: translateY(1px);
+}
+
+.btn.primary{
+  background: linear-gradient(180deg, rgba(79,140,255,.95), rgba(47,111,255,.95));
+  border: none;
+  color: white;
+  box-shadow: 0 10px 24px rgba(79,140,255,.18);
+}
+.btn.primary:hover{ opacity: .95; }
+
+.btn.danger{
+  background: rgba(255,93,93,.12);
+  border-color: rgba(255,93,93,.35);
+  color: #ffd6d6;
+}
+
+/* 7) Tags / chips (もし使ってるなら) */
+.badge, .tag{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(79,140,255,.28);
+  background: rgba(79,140,255,.10);
+  color: #dce9ff;
+  font-size: 12px;
+}
+
+/* 8) Horizontal separator */
+.sep{
+  border: none;
+  border-top: 1px solid rgba(255,255,255,.08);
+  margin: 14px 0;
+}
+
+/* 9) Chat (クラス名が違う場合は合わせて) */
+.chat-wrap{
+  background: rgba(2,6,23,.45);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+/* メッセージの吹き出し */
+.chat-message{
+  max-width: 78%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+}
+
+.chat-message.user{
+  background: linear-gradient(180deg, rgba(79,140,255,.95), rgba(47,111,255,.92));
+  border: none;
+  color: white;
+}
+
+.chat-message.admin{
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.10);
+}
+
+/* 10) Responsive polish */
+@media (max-width: 768px){
+  .container{ padding: 12px; }
+  h1{ font-size: 22px; }
+
+  /* 既存の .row を縦並び優先に */
+  .row{
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn{
+    width: 100%;
+  }
+  .chat-message{
+    max-width: 100%;
+  }
+}
