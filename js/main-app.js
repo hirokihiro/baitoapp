@@ -124,6 +124,26 @@ let pendingApplyJob = null;
 let currentChatAppId = null;
 let unSubChat = null;
 
+// ★ 追加：送信中/失敗のローカルメッセージ
+let remoteMessages = [];
+let localPending = []; // [{ id, senderUid, senderRole, text, createdAt, pending, failed }]
+
+function mergeMessages(remote, pending) {
+  // pendingは最後尾に付ける（送信中の吹き出しを確実に出す）
+  return [...remote, ...pending];
+}
+
+function repaintChat() {
+  if (!chatWrap || !uid) return;
+  renderChat({
+    wrapEl: chatWrap,
+    meUid: uid,
+    meRole: "user",
+    messages: mergeMessages(remoteMessages, localPending),
+    // typing: { role:"admin", on:true } などを実装したい場合はここ
+  });
+}
+
 logoutBtn?.addEventListener("click", async () => {
   await logout();
   location.href = "./index.html";
@@ -142,11 +162,10 @@ showFavBtn?.addEventListener("click", () => {
 /* ✅ ここが重要修正
    inputはテキスト入力(q)だけ
    select(sort/area)はchangeで反映
-*/
+ */
 qEl?.addEventListener("input", paint);
 
 areaFilterEl?.addEventListener("change", () => {
-  // selectの値が確実に取れる
   paint();
 });
 
@@ -177,10 +196,26 @@ applyOk?.addEventListener("click", async () => {
   }
 });
 
-// chat send
-chatSend?.addEventListener("click", async () => {
+// ===== チャット送信（送信中…/失敗/Enter送信） =====
+async function doSendChat() {
   const text = (chatInput?.value || "").trim();
   if (!text || !currentChatAppId || !uid) return;
+
+  const tempId = `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const tempMsg = {
+    id: tempId,
+    senderUid: uid,
+    senderRole: "user",
+    text,
+    createdAt: new Date(),
+    pending: true,
+    failed: false
+  };
+
+  // 先に表示（送信中…）
+  localPending.push(tempMsg);
+  chatInput.value = "";
+  repaintChat();
 
   try {
     await sendMessage({
@@ -189,11 +224,29 @@ chatSend?.addEventListener("click", async () => {
       senderRole: "user",
       text
     });
-    chatInput.value = "";
+
+    // 成功：pendingから除去（Firestore側のwatchで本物が来る）
+    localPending = localPending.filter((m) => m.id !== tempId);
+    repaintChat();
   } catch (e) {
     console.error(e);
+    // 失敗：failed表示にする
+    localPending = localPending.map((m) =>
+      m.id === tempId ? { ...m, pending: false, failed: true } : m
+    );
+    repaintChat();
     toast("送信に失敗しました");
   }
+}
+
+chatSend?.addEventListener("click", doSendChat);
+
+// Enterで送信（日本語IME中は送らない）
+chatInput?.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  if (e.isComposing) return; // IME変換中
+  e.preventDefault();
+  doSendChat();
 });
 
 // profile save
@@ -265,12 +318,6 @@ async function refreshJobs() {
   jobsMsg.textContent = "読み込み中...";
   try {
     allJobs = await listJobs(sortEl?.value || "new");
-
-    // （任意）デバッグ：必要なら残してOK
-    // console.log("allJobs count:", allJobs.length);
-    // console.log("areas:", allJobs.map(j => j.area));
-    // console.log("selected area:", areaFilterEl?.value);
-
     jobsMsg.textContent = "";
   } catch (e) {
     console.error(e);
@@ -312,10 +359,15 @@ async function refreshApplications() {
 
         if (chatMeta) chatMeta.textContent = `${app.jobTitle || ""}（${app.shop || ""}）のチャット`;
 
+        // pending表示をリセット（別応募のチャットに切り替えたので）
+        localPending = [];
+        remoteMessages = [];
+        repaintChat();
+
         if (unSubChat) unSubChat();
         unSubChat = watchMessages(app.id, (msgs) => {
-          if (!chatWrap) return;
-          renderChat({ wrapEl: chatWrap, meUid: uid, messages: msgs });
+          remoteMessages = Array.isArray(msgs) ? msgs : [];
+          repaintChat();
         });
 
         await markRead({ applicationId: app.id, viewerRole: "user" });
@@ -351,7 +403,6 @@ function filteredJobs() {
   if (showingFav) list = list.filter((j) => favorites.has(j.id));
   return list;
 }
-
 
 function paint() {
   const list = filteredJobs();

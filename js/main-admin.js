@@ -1,24 +1,12 @@
 // js/main-admin.js
 import { watchAuth, logout, fetchMyProfile } from "./services/authService.js";
-import {
-  listJobs,
-  createJob,
-  normalizeTags
-} from "./services/jobsService.js";
-import {
-  getApplicationCountsByJob,
-  listApplicationsByJobId
-} from "./services/applicationsService.js";
+import { listJobs, createJob, normalizeTags } from "./services/jobsService.js";
+import { getApplicationCountsByJob, listApplicationsByJobId } from "./services/applicationsService.js";
 import { renderApplications } from "./ui/renderApplications.js";
 import { toast } from "./ui/toast.js";
 
 // ===== chat =====
-import {
-  ensureConversation,
-  watchMessages,
-  sendMessage,
-  markRead
-} from "./services/chatService.js";
+import { ensureConversation, watchMessages, sendMessage, markRead } from "./services/chatService.js";
 import { renderChat } from "./ui/renderChat.js";
 
 // ===== profile =====
@@ -55,6 +43,24 @@ let countsMap = new Map();
 // chat state
 let currentChatAppId = null;
 let unSubChatAdmin = null;
+
+// ★ 追加：送信中/失敗のローカルメッセージ
+let remoteMessages = [];
+let localPending = [];
+
+function mergeMessages(remote, pending) {
+  return [...remote, ...pending];
+}
+
+function repaintChat() {
+  if (!chatWrapAdmin || !uid) return;
+  renderChat({
+    wrapEl: chatWrapAdmin,
+    meUid: uid,
+    meRole: "admin",
+    messages: mergeMessages(remoteMessages, localPending),
+  });
+}
 
 // ===== logout =====
 logoutBtn?.addEventListener("click", async () => {
@@ -167,12 +173,9 @@ function renderAdminJobs() {
       </div>
     `;
 
-    card.querySelector(`[data-show="${job.id}"]`)?.addEventListener(
-      "click",
-      async () => {
-        await showApplicants(job);
-      }
-    );
+    card.querySelector(`[data-show="${job.id}"]`)?.addEventListener("click", async () => {
+      await showApplicants(job);
+    });
 
     list.appendChild(card);
   }
@@ -235,26 +238,67 @@ async function openChat(app) {
 
   chatMetaAdmin.textContent = `${app.jobTitle} / 応募者：${app.uid}`;
 
+  // 切替時にリセット
+  localPending = [];
+  remoteMessages = [];
+  repaintChat();
+
   if (unSubChatAdmin) unSubChatAdmin();
   unSubChatAdmin = watchMessages(app.id, (msgs) => {
-    renderChat({ wrapEl: chatWrapAdmin, meUid: uid, messages: msgs });
+    remoteMessages = Array.isArray(msgs) ? msgs : [];
+    repaintChat();
   });
 
   await markRead({ applicationId: app.id, viewerRole: "admin" });
 }
 
-chatSendAdmin?.addEventListener("click", async () => {
-  const text = chatInputAdmin.value.trim();
-  if (!text || !currentChatAppId) return;
+// ===== 管理者送信（送信中…/失敗/Enter送信） =====
+async function doSendAdminChat() {
+  const text = (chatInputAdmin?.value || "").trim();
+  if (!text || !currentChatAppId || !uid) return;
 
-  await sendMessage({
-    applicationId: currentChatAppId,
+  const tempId = `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const tempMsg = {
+    id: tempId,
     senderUid: uid,
     senderRole: "admin",
-    text
-  });
+    text,
+    createdAt: new Date(),
+    pending: true,
+    failed: false
+  };
 
+  localPending.push(tempMsg);
   chatInputAdmin.value = "";
+  repaintChat();
+
+  try {
+    await sendMessage({
+      applicationId: currentChatAppId,
+      senderUid: uid,
+      senderRole: "admin",
+      text
+    });
+
+    localPending = localPending.filter((m) => m.id !== tempId);
+    repaintChat();
+  } catch (e) {
+    console.error(e);
+    localPending = localPending.map((m) =>
+      m.id === tempId ? { ...m, pending: false, failed: true } : m
+    );
+    repaintChat();
+    toast("送信に失敗しました");
+  }
+}
+
+chatSendAdmin?.addEventListener("click", doSendAdminChat);
+
+chatInputAdmin?.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  if (e.isComposing) return;
+  e.preventDefault();
+  doSendAdminChat();
 });
 
 // ===== util =====

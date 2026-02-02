@@ -9,23 +9,36 @@
   <link rel="stylesheet" href="./css/components.css" />
   <link rel="stylesheet" href="./css/style.css" />
 </head>
-<body>
+<body class="admin">
   <div class="container">
-    <header class="header">
-      <h1>BAITOAPP</h1>
-      <p class="muted">管理者：求人の投稿/編集/削除</p>
-      <div class="row space-between">
+    <header class="header admin-header">
+      <div class="admin-title">
+        <h1>BAITOAPP</h1>
+        <span class="admin-pill">管理ダッシュボード</span>
+      </div>
+      <p class="muted">管理者：求人の投稿 / 編集 / 削除・応募者対応</p>
+      <div class="row space-between admin-actions">
         <a class="link" href="./app.html">ユーザー画面へ</a>
         <button id="logoutBtn" class="btn">ログアウト</button>
       </div>
     </header>
 
-    <main class="card">
-      <h2 class="card-title">管理者画面</h2>
+    <main class="card admin-shell">
+      <div class="admin-hero">
+        <div>
+          <h2 class="card-title">管理者画面</h2>
+          <p class="muted">投稿から応募者対応まで、ここで完結。</p>
+        </div>
+        <div class="admin-hero-cta">
+          <span class="admin-kicker">運用モード</span>
+          <span class="admin-chip">リアルタイム更新</span>
+        </div>
+      </div>
       <p id="adminMsg" class="msg" aria-live="polite"></p>
 
-      <section class="card" style="margin-top:12px;">
-        <h3>求人を投稿</h3>
+      <div class="admin-grid">
+      <section class="card admin-panel admin-panel--post">
+        <h3 class="panel-title">求人を投稿</h3>
         <form id="jobForm" class="form" novalidate>
           <label class="label" for="title">タイトル</label>
           <input class="input" id="title" required />
@@ -62,8 +75,8 @@
         </form>
       </section>
 
-      <section class="card" style="margin-top:12px;">
-        <h3>求人一覧（編集/削除）</h3>
+      <section class="card admin-panel admin-panel--jobs">
+        <h3 class="panel-title">求人一覧（編集/削除）</h3>
         <div class="row" style="gap:8px; flex-wrap:wrap;">
           <input id="adminQ" class="input" placeholder="検索（タイトル/店舗/タグ）" />
           <select id="adminSort" class="select">
@@ -77,15 +90,15 @@
         <p id="jobsMsg" class="msg" aria-live="polite"></p>
       </section>
 
-      <section class="card" style="margin-top:12px;">
-        <h3>応募者一覧（求人ごと）</h3>
+      <section class="card admin-panel admin-panel--apps">
+        <h3 class="panel-title">応募者一覧（求人ごと）</h3>
         <p class="muted">求人の「応募者を見る」ボタンを押すと、応募者が表示されます。</p>
         <p id="appsMsgAdmin" class="msg" aria-live="polite"></p>
         <div id="appsWrapAdmin"></div>
       </section>
 
-      <section class="card" style="margin-top:12px;">
-        <h3>応募者プロフィール</h3>
+      <section class="card admin-panel admin-panel--profile">
+        <h3 class="panel-title">応募者プロフィール</h3>
         <p class="muted">応募者一覧で「プロフィール」を押すと表示されます。</p>
 
         <p id="profileMsgAdmin" class="msg" aria-live="polite"></p>
@@ -96,18 +109,26 @@
       </section>
 
 
-      <section class="card" style="margin-top:12px;">
-        <h3>応募者チャット</h3>
+      <section class="card admin-panel admin-panel--chat">
+        <h3 class="panel-title">応募者チャット</h3>
         <p class="muted">応募者一覧で「チャット」を押すとここに表示されます。</p>
 
         <div id="chatMetaAdmin" class="muted" style="margin:8px 0;"></div>
-        <div id="chatWrapAdmin" style="height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;"></div>
+
+        <!-- ★ ここが完成形 ★ -->
+        <div
+          id="chatWrapAdmin"
+          class="chat-wrap"
+          style="height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;">
+        </div>
 
         <div class="row" style="gap:8px; margin-top:10px;">
           <input id="chatInputAdmin" class="input" placeholder="メッセージ…" />
           <button id="chatSendAdmin" class="btn primary" type="button">送信</button>
         </div>
       </section>
+      </div>
+
 
 
     </main>
