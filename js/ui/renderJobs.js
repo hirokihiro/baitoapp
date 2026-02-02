@@ -24,34 +24,48 @@ export function renderJobs({
     const fav = favoritesSet?.has(job.id);
     const applied = appliedSet?.has(job.id);
     const count = countsMap?.get(job.id) || 0;
+    const badges = buildBadges(job, count);
+    const wage = Number(job.wage || 0);
+    const wageText = Number.isFinite(wage) && wage > 0 ? `¥${wage.toLocaleString()}/時` : "時給 未設定";
+    const simText = Number.isFinite(wage) && wage > 0
+      ? `目安：週2×4hで月約¥${formatYen(wage * 32)}`
+      : "";
+    const subMeta = buildSubMeta(job);
 
     card.innerHTML = `
-      <div class="row space-between" style="align-items:flex-start; gap:10px;">
-        <div style="min-width:0;">
+      <div class="job-topbar">
+        <div class="job-title-wrap">
           <p class="job-title">${escapeHtml(job.title || "")}</p>
-          <div class="job-meta">店舗：${escapeHtml(job.shop || "")}</div>
-          <div class="job-meta">エリア：${escapeHtml(job.area || "")}</div>
-          <div class="job-meta">時給：¥${escapeHtml(job.wage ?? "")}</div>
-          <div class="job-meta">シフト：${escapeHtml(job.shift || "")}</div>
-          <div class="job-meta">応募者数：<b>${count}</b>人</div>
+          ${badges ? `<div class="job-badges">${badges}</div>` : ``}
         </div>
 
-        <div class="row" style="gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-          <button class="btn" data-fav="${job.id}">
-            ${fav ? "♥" : "♡"} お気に入り
-          </button>
+        <button class="fav-btn ${fav ? "on" : ""}" data-fav="${job.id}" aria-pressed="${fav ? "true" : "false"}" title="お気に入り">
+          ${fav ? "♥" : "♡"}
+        </button>
+      </div>
 
-          ${
-            applied
-              ? `
-                <button class="btn" disabled>応募済み</button>
-                <button class="btn" data-cancel="${job.id}">取り消し</button>
-              `
-              : `
-                <button class="btn primary" data-apply="${job.id}">応募する</button>
-              `
-          }
-        </div>
+      <div class="job-wage-row">
+        <div class="job-wage-large">${wageText}</div>
+        ${subMeta ? `<div class="job-submeta">${subMeta}</div>` : ``}
+      </div>
+
+      <div class="job-meta">店舗：${escapeHtml(job.shop || "")}</div>
+      <div class="job-meta">エリア：${escapeHtml(job.area || "")}</div>
+      <div class="job-meta">シフト：${escapeHtml(job.shift || "")}</div>
+      <div class="job-meta">応募者数：<b>${count}</b>人</div>
+      ${simText ? `<div class="job-sim">${simText}</div>` : ``}
+
+      <div class="job-actions">
+        ${
+          applied
+            ? `
+              <button class="btn" disabled>応募済み</button>
+              <button class="btn" data-cancel="${job.id}">取り消し</button>
+            `
+            : `
+              <button class="btn primary" data-apply="${job.id}">応募する</button>
+            `
+        }
       </div>
     `;
 
@@ -80,4 +94,53 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function toDateSafe(v) {
+  if (!v) return null;
+  if (typeof v?.toDate === "function") return v.toDate();
+  if (typeof v?.seconds === "number") return new Date(v.seconds * 1000);
+  if (typeof v === "number") return new Date(v);
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function isRecent(createdAt, days = 3) {
+  const d = toDateSafe(createdAt);
+  if (!d) return false;
+  const diff = Date.now() - d.getTime();
+  return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
+}
+
+function formatYen(v) {
+  return Number(v || 0).toLocaleString();
+}
+
+function buildBadges(job, count) {
+  const badges = [];
+  if (typeof count === "number" && count >= 5) {
+    badges.push(`<span class="badge badge-hot">人気</span>`);
+  }
+  if (isRecent(job.createdAt)) {
+    badges.push(`<span class="badge badge-urgent">急募</span>`);
+  }
+
+  const tags = Array.isArray(job.tags) ? job.tags : [];
+  for (const t of tags.slice(0, 4)) {
+    badges.push(`<span class="badge badge-tag">${escapeHtml(t)}</span>`);
+  }
+
+  return badges.join("");
+}
+
+function buildSubMeta(job) {
+  const tags = Array.isArray(job.tags) ? job.tags : [];
+  const parts = [];
+  const hasTravel = tags.some((t) => /交通費/.test(t));
+  const hasFlexible = tags.some((t) => /(シフト|週\d|自由|柔軟)/.test(t)) || /週\d/.test(job.shift || "");
+
+  if (hasTravel) parts.push("交通費あり");
+  if (hasFlexible) parts.push("シフト相談OK");
+
+  return parts.join(" / ");
 }

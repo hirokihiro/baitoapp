@@ -1253,6 +1253,126 @@ body.user .chat-message.admin{
   color: #1f2b3a;
 }
 
+/* Job card enhancements */
+.job-topbar{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.job-title-wrap{ min-width: 0; }
+
+.job-badges{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.job-badges .badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, #f1f4fb);
+  color: var(--muted, #51627a);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.badge-hot{
+  background: rgba(255, 122, 89, .15);
+  border-color: rgba(255, 122, 89, .35);
+  color: #b94834;
+}
+
+.badge-urgent{
+  background: rgba(47, 184, 138, .14);
+  border-color: rgba(47, 184, 138, .3);
+  color: #1a6e54;
+}
+
+.badge-tag{
+  background: #f5f7fd;
+  border-color: #e3e8f2;
+  color: #54647c;
+}
+
+.fav-btn{
+  border: 1px solid var(--border-strong, #cfd8ea);
+  background: #fff;
+  color: #ff7a59;
+  border-radius: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  box-shadow: 0 6px 12px rgba(22,32,52,.08);
+}
+
+.fav-btn.on{
+  background: rgba(255,122,89,.12);
+  border-color: rgba(255,122,89,.4);
+  color: #e24a2a;
+}
+
+.job-wage-row{
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px 0 6px;
+  flex-wrap: wrap;
+}
+
+.job-wage-large{
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-strong, #f45d3c);
+}
+
+.job-submeta{
+  font-size: 12px;
+  color: #5b6c84;
+  background: #f5f7fd;
+  border: 1px solid #e3e8f2;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.job-actions{
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.job-sim{
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6a7b92;
+}
+
+.status-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e3e8f2;
+  background: #f5f7fd;
+  color: #4f6076;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px){
+  .job-wage-row{ align-items: flex-start; }
+  .fav-btn{ padding: 6px 8px; }
+}
+
 body.admin #chatWrapAdmin{
   background: #ffffff;
   border: 1px solid var(--border);

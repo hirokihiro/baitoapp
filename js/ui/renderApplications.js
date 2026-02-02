@@ -18,11 +18,15 @@ export function renderApplications(wrapEl, apps, options = {}) {
     item.className = "job-card";
 
     const whenText = formatWhen(a.createdAt);
+    const status = resolveStatus(a);
     const hasChat = typeof onOpenChat === "function";
     const hasCancel = typeof onCancel === "function" && !!a.jobId;
 
     item.innerHTML = `
-      <p class="job-title">${escapeHtml(a.jobTitle || "")}</p>
+      <div class="row space-between" style="align-items:flex-start; gap:8px;">
+        <p class="job-title">${escapeHtml(a.jobTitle || "")}</p>
+        <span class="status-pill">${escapeHtml(status)}</span>
+      </div>
       <div class="job-meta">店舗：${escapeHtml(a.shop || "")}</div>
       <div class="job-meta">応募ID：${escapeHtml(a.id || "")}</div>
       ${showUid ? `<div class="job-meta">応募者UID：${escapeHtml(a.uid || "")}</div>` : ``}
@@ -68,4 +72,9 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function resolveStatus(app) {
+  if (typeof app?.status === "string" && app.status.trim()) return app.status.trim();
+  return "選考中";
 }
