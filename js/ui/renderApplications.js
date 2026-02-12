@@ -1,6 +1,16 @@
 // js/ui/renderApplications.js
 export function renderApplications(wrapEl, apps, options = {}) {
-  const { onCancel, onOpenChat, onShowProfile, onUpdateStatus, showUid = false, emptyText = "応募履歴はまだありません。" } = options;
+  const {
+    onCancel,
+    onOpenChat,
+    onShowProfile,
+    onUpdateStatus,
+    onProposeInterview,
+    onSelectInterview,
+    onSaveAdminMeta,
+    showUid = false,
+    emptyText = "応募履歴はまだありません。"
+  } = options;
 
   wrapEl.innerHTML = "";
 
@@ -25,7 +35,12 @@ export function renderApplications(wrapEl, apps, options = {}) {
     const hasCancel = typeof onCancel === "function" && !!a.jobId;
     const hasProfile = typeof onShowProfile === "function" && !!a.uid;
     const hasStatusUpdate = typeof onUpdateStatus === "function" && !!a.id;
+    const hasProposeInterview = typeof onProposeInterview === "function" && !!a.id;
+    const hasSelectInterview = typeof onSelectInterview === "function" && !!a.id;
+    const hasAdminMeta = typeof onSaveAdminMeta === "function" && !!a.id;
     const currentStatus = resolveStatus(a);
+    const slots = Array.isArray(a?.interviewProposal?.slots) ? a.interviewProposal.slots : [];
+    const selectedSlot = a?.interviewProposal?.selected || "";
 
     item.innerHTML = `
       <div class="row space-between app-head" style="align-items:flex-start; gap:8px;">
@@ -48,6 +63,42 @@ export function renderApplications(wrapEl, apps, options = {}) {
           `
           : ""
       }
+      ${
+        hasProposeInterview
+          ? `
+            <div class="row" style="gap:8px; margin-top:8px; flex-wrap:wrap;">
+              <input class="input" type="datetime-local" data-intv1="${escapeHtml(a.id || "")}" />
+              <input class="input" type="datetime-local" data-intv2="${escapeHtml(a.id || "")}" />
+              <button class="btn" data-intv-send="${escapeHtml(a.id || "")}">面接候補を送る</button>
+            </div>
+          `
+          : ""
+      }
+      ${
+        hasAdminMeta
+          ? `
+            <div class="row" style="gap:8px; margin-top:8px; flex-wrap:wrap;">
+              <input class="input" data-admin-tags="${escapeHtml(a.id || "")}" placeholder="管理タグ（例: 優先, 折返し待ち）" value="${escapeHtml(Array.isArray(a.adminTags) ? a.adminTags.join(", ") : "")}" />
+              <textarea class="textarea" data-admin-memo="${escapeHtml(a.id || "")}" placeholder="管理メモ">${escapeHtml(a.adminMemo || "")}</textarea>
+              <button class="btn" data-admin-meta-save="${escapeHtml(a.id || "")}">メモ/タグ保存</button>
+            </div>
+          `
+          : ""
+      }
+      ${
+        hasSelectInterview && slots.length
+          ? `
+            <div class="row" style="gap:8px; margin-top:8px; flex-wrap:wrap;">
+              <div class="job-meta">面接候補: ${slots.map((s) => `<span class="status-pill">${escapeHtml(formatSlot(s))}</span>`).join(" ")}</div>
+              ${
+                selectedSlot
+                  ? `<div class="job-meta">選択済み: <b>${escapeHtml(formatSlot(selectedSlot))}</b></div>`
+                  : slots.map((s) => `<button class="btn" data-intv-pick="${escapeHtml(a.id || "")}" data-slot="${escapeHtml(s)}">${escapeHtml(formatSlot(s))}</button>`).join("")
+              }
+            </div>
+          `
+          : ""
+      }
 
       <div class="row" style="gap:8px; margin-top:10px; flex-wrap:wrap;">
         ${hasChat ? `<button class="btn" data-chat="${escapeHtml(a.id || "")}">チャット</button>` : ``}
@@ -60,7 +111,7 @@ export function renderApplications(wrapEl, apps, options = {}) {
   }
 
   list.addEventListener("click", async (e) => {
-    const target = e.target?.closest?.("button[data-chat], button[data-cancel], button[data-profile], button[data-status-save]");
+    const target = e.target?.closest?.("button[data-chat], button[data-cancel], button[data-profile], button[data-status-save], button[data-intv-send], button[data-intv-pick], button[data-admin-meta-save]");
     if (!target) return;
 
     if (target.dataset.chat) {
@@ -80,6 +131,33 @@ export function renderApplications(wrapEl, apps, options = {}) {
         .find((el) => el.dataset.statusSelect === appId);
       const nextStatus = statusEl?.value || "選考中";
       await onUpdateStatus?.(appId, nextStatus);
+      return;
+    }
+
+    if (target.dataset.intvSend) {
+      const appId = String(target.dataset.intvSend);
+      const v1 = list.querySelector(`[data-intv1="${appId}"]`)?.value || "";
+      const v2 = list.querySelector(`[data-intv2="${appId}"]`)?.value || "";
+      await onProposeInterview?.(appId, [v1, v2]);
+      return;
+    }
+
+    if (target.dataset.intvPick) {
+      const appId = String(target.dataset.intvPick);
+      const slot = String(target.dataset.slot || "");
+      await onSelectInterview?.(appId, slot);
+      return;
+    }
+
+    if (target.dataset.adminMetaSave) {
+      const appId = String(target.dataset.adminMetaSave);
+      const memo = list.querySelector(`[data-admin-memo="${appId}"]`)?.value || "";
+      const tagsText = list.querySelector(`[data-admin-tags="${appId}"]`)?.value || "";
+      const tags = tagsText
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      await onSaveAdminMeta?.(appId, { memo, tags });
       return;
     }
 
@@ -121,4 +199,14 @@ function buildStatusOptions(current) {
   return statuses
     .map((s) => `<option value="${s}" ${s === current ? "selected" : ""}>${s}</option>`)
     .join("");
+}
+
+function formatSlot(v) {
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return String(v || "");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${mm}/${dd} ${hh}:${mi}`;
 }

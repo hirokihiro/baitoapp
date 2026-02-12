@@ -48,6 +48,39 @@ export async function updateApplicationStatus(applicationId, status) {
   });
 }
 
+export async function updateApplicationAdminFields(applicationId, patch = {}) {
+  if (!applicationId) return;
+  await updateDoc(doc(db, "applications", applicationId), {
+    ...patch,
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function proposeInterviewSlots(applicationId, slots = []) {
+  if (!applicationId) return;
+  const clean = slots
+    .map((s) => String(s || "").trim())
+    .filter(Boolean)
+    .slice(0, 2);
+
+  await updateDoc(doc(db, "applications", applicationId), {
+    "interviewProposal.slots": clean,
+    "interviewProposal.selected": "",
+    "interviewProposal.updatedAt": Date.now(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function selectInterviewSlot(applicationId, slot) {
+  if (!applicationId || !slot) return;
+  await updateDoc(doc(db, "applications", applicationId), {
+    "interviewProposal.selected": String(slot),
+    "interviewProposal.updatedAt": Date.now(),
+    status: "面接予定",
+    updatedAt: serverTimestamp()
+  });
+}
+
 /**
  * 自分の応募履歴（インデックス不要：orderByしない→JSでソート）
  */

@@ -7,6 +7,7 @@ import {
   collection,
   addDoc,
   query,
+  where,
   orderBy,
   onSnapshot,
   serverTimestamp,
@@ -42,6 +43,23 @@ export function watchConversationMeta(applicationId, onChange) {
   const ref = doc(db, "conversations", applicationId);
   return onSnapshot(ref, (snap) => {
     onChange(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+  });
+}
+
+export function watchConversationsForUser(uid, onChange) {
+  const q = query(collection(db, "conversations"), where("applicantUid", "==", uid));
+  return onSnapshot(q, (snap) => {
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    rows.sort((a, b) => toMillisSafe(b.updatedAt) - toMillisSafe(a.updatedAt));
+    onChange(rows);
+  });
+}
+
+export function watchAllConversations(onChange) {
+  return onSnapshot(collection(db, "conversations"), (snap) => {
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    rows.sort((a, b) => toMillisSafe(b.updatedAt) - toMillisSafe(a.updatedAt));
+    onChange(rows);
   });
 }
 
@@ -137,4 +155,14 @@ export async function markRead({ applicationId, viewerRole }) {
   });
 
   await batch.commit();
+}
+
+function toMillisSafe(v) {
+  if (!v) return 0;
+  if (typeof v?.toMillis === "function") return v.toMillis();
+  if (typeof v?.seconds === "number") return v.seconds * 1000;
+  const n = Number(v);
+  if (Number.isFinite(n)) return n;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? 0 : d.getTime();
 }
