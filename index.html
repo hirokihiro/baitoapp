@@ -3,44 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BAITOAPP - ログイン</title>
-  <link rel="stylesheet" href="./css/base.css" />
-  <link rel="stylesheet" href="./css/layout.css" />
-  <link rel="stylesheet" href="./css/components.css" />
-  <link rel="stylesheet" href="./css/style.css" />
-
+  <title>BAITOAPP - はじめる</title>
+  <link rel="stylesheet" href="./css/start-screen.css" />
 </head>
-<body>
-  <div class="container">
-    <header class="header">
+<body class="start-screen">
+  <div class="start-hero">
+    <div class="start-top">
+      <a class="start-skip" href="./login.html">スキップ</a>
+    </div>
+
+    <div class="start-brand">
       <h1>BAITOAPP</h1>
-      <p class="muted">ログインして求人を探そう</p>
-    </header>
-
-    <main class="card" aria-labelledby="loginTitle">
-      <h2 id="loginTitle" class="card-title">ログイン</h2>
-
-      <form id="loginForm" class="form" novalidate>
-        <label class="label" for="email">メールアドレス</label>
-        <input class="input" type="email" id="email" autocomplete="email" required />
-
-        <label class="label" for="password">パスワード</label>
-        <input class="input" type="password" id="password" minlength="6" autocomplete="current-password" required />
-
-        <button class="btn primary" type="submit">ログイン</button>
-      </form>
-
-      <div class="row space-between">
-        <a class="link" href="./register.html">新規登録はこちら</a>
-      </div>
-
-      <p id="msg" class="msg" aria-live="polite"></p>
-    </main>
+      <p>自分に合う働き方を、すぐに見つけよう。</p>
+    </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+  <section class="start-sheet" aria-label="はじめ方を選ぶ">
+    <p class="start-callout">会員登録をして、すぐにはじめましょう！</p>
 
-  <script type="module" src="./js/main-login.js"></script>
+    <div class="start-choices">
+      <a class="start-choice start-choice-primary" href="./register.html?role=user">
+        <span>お客様として</span>
+        <strong>はじめる</strong>
+      </a>
+
+      <a class="start-choice start-choice-secondary" href="./register.html?role=admin">
+        <span>掲載者として</span>
+        <strong>登録する</strong>
+      </a>
+    </div>
+
+    <p class="start-login">
+      すでにアカウントをお持ちの方は
+      <a href="./login.html">ログイン</a>
+    </p>
+  </section>
+
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+  <div id="msg" class="start-msg" aria-live="polite"></div>
+
+  <script type="module" src="./js/main-start.js"></script>
 </body>
 </html>

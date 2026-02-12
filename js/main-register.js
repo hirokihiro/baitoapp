@@ -3,6 +3,7 @@ import { toast } from "./ui/toast.js";
 
 const form = document.getElementById("registerForm");
 const msg = document.getElementById("msg");
+const roleSelect = document.getElementById("role");
 
 function showError(text) {
   msg.textContent = text;
@@ -24,7 +25,7 @@ form?.addEventListener("submit", async (e) => {
   const name = document.getElementById("name").value.trim();
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  const role = "user"; 
+  const role = (roleSelect?.value === "admin") ? "admin" : "user";
 
   if (!name) return showError("名前を入力してください。");
   if (!email) return showError("メールアドレスを入力してください。");
@@ -33,10 +34,16 @@ form?.addEventListener("submit", async (e) => {
   try {
     await register({ name, email, password, role });
     toast("登録しました。ログインしてください。");
-    location.href = "./index.html";
+    location.href = "./login.html";
   } catch (err) {
     console.error(err);
     msg.textContent = `登録に失敗しました：${err.code || err.message || "unknown"}`;
   }
 
 });
+
+const params = new URLSearchParams(location.search);
+const roleFromQuery = params.get("role");
+if (roleSelect && (roleFromQuery === "admin" || roleFromQuery === "user")) {
+  roleSelect.value = roleFromQuery;
+}

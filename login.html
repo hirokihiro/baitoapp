@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAITOAPP - ログイン</title>
+  <link rel="stylesheet" href="./css/entry-theme.css" />
+</head>
+<body class="entry-screen">
+  <main class="entry-shell" aria-labelledby="loginTitle">
+    <div class="entry-brand">
+      <h1>BAITOAPP</h1>
+      <p>ログインして、すぐに仕事を探そう。</p>
+    </div>
+
+    <section class="entry-card">
+      <h2 id="loginTitle" class="entry-title">ログイン</h2>
+
+      <form id="loginForm" class="entry-form" novalidate>
+        <label class="entry-label" for="email">メールアドレス</label>
+        <input class="entry-input" type="email" id="email" autocomplete="email" required />
+
+        <label class="entry-label" for="password">パスワード</label>
+        <input class="entry-input" type="password" id="password" minlength="6" autocomplete="current-password" required />
+
+        <button class="entry-btn" type="submit">ログイン</button>
+      </form>
+
+      <p class="entry-links">
+        <a class="link" href="./register.html?role=user">新規登録はこちら</a>
+      </p>
+
+      <p id="msg" class="entry-msg" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+
+  <script type="module" src="./js/main-login.js"></script>
+</body>
+</html>

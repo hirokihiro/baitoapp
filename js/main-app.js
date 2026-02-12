@@ -1,7 +1,12 @@
 // js/main-app.js
 import { watchAuth, logout, fetchMyProfile } from "./services/authService.js";
 import { listJobs } from "./services/jobsService.js";
-import { listMyApplications, applyToJob, cancelApplication } from "./services/applicationsService.js";
+import {
+  listMyApplications,
+  applyToJob,
+  cancelApplication,
+  selectInterviewSlot
+} from "./services/applicationsService.js";
 import { listFavorites, setFavorite } from "./services/favoritesService.js";
 import { renderJobs } from "./ui/renderJobs.js";
 import { renderApplications } from "./ui/renderApplications.js";
@@ -15,7 +20,8 @@ import {
   sendMessage,
   markRead,
   watchConversationMeta,
-  setTypingState
+  setTypingState,
+  watchConversationsForUser
 } from "./services/chatService.js";
 import { renderChat } from "./ui/renderChat.js";
 
@@ -69,6 +75,7 @@ const chatMeta = document.getElementById("chatMeta");
 const chatWrap = document.getElementById("chatWrap");
 const chatInput = document.getElementById("chatInput");
 const chatSend = document.getElementById("chatSend");
+const chatRooms = document.getElementById("chatRooms");
 const chatTemplate = document.getElementById("chatTemplate");
 const chatExportBtn = document.getElementById("chatExportBtn");
 const chatClearDraftBtn = document.getElementById("chatClearDraftBtn");
@@ -183,6 +190,7 @@ let showingFav = false;
 let pendingApplyJob = null;
 let detailJob = null;
 let appliedJobs = new Set();
+let myApplications = [];
 let queryDebounceTimer = null;
 const APP_STATE_KEY = "baitoapp.user.filters.v1";
 
@@ -190,8 +198,11 @@ const APP_STATE_KEY = "baitoapp.user.filters.v1";
 let currentChatAppId = null;
 let unSubChat = null;
 let unSubConvMeta = null;
+let unSubConversations = null;
 let typingTimer = null;
 let typingRemote = { on: false, role: null };
+let myConversations = [];
+let lastUnreadUser = new Map();
 
 // ★ 追加：送信中/失敗のローカルメッセージ
 let remoteMessages = [];
@@ -464,6 +475,7 @@ watchAuth(async (user) => {
 
   uid = user.uid;
   profile = await fetchMyProfile();
+  ensureNotificationPermission();
 
   welcomeEl.textContent = profile?.name ? `ようこそ、${profile.name}さん` : "";
 
@@ -478,6 +490,13 @@ watchAuth(async (user) => {
   restoreUiState();
   await Promise.all([refreshJobs(), refreshFavorites(), refreshApplications()]);
   paint();
+
+  if (unSubConversations) unSubConversations();
+  unSubConversations = watchConversationsForUser(uid, (rows) => {
+    myConversations = rows || [];
+    renderUserConversationList();
+    notifyUserUnreadChanges(rows || []);
+  });
 
   viewHistory = ["jobs"];
   setView("jobs", { push: false, replace: true });
@@ -508,6 +527,7 @@ async function refreshApplications() {
   appsMsg.textContent = "読み込み中...";
   try {
     const apps = await listMyApplications(uid);
+    myApplications = apps;
     appsMsg.textContent = "";
     appliedJobs = new Set(apps.map((a) => a.jobId).filter(Boolean));
 
@@ -572,6 +592,9 @@ async function refreshApplications() {
           if (chatMeta) chatMeta.textContent = "チャットの読み込みに失敗しました。";
           toast("チャットの読み込みに失敗しました");
         }
+      },
+      onSelectInterview: async (applicationId, slot) => {
+        await handleSelectInterview(applicationId, slot);
       }
     });
   } catch (e) {
@@ -754,6 +777,18 @@ function retryFailedMessage(msg) {
   doSendChat(msg.text);
 }
 
+async function handleSelectInterview(applicationId, slot) {
+  if (!applicationId || !slot) return;
+  try {
+    await selectInterviewSlot(applicationId, slot);
+    await refreshApplications();
+    toast("面接候補を選択しました");
+  } catch (e) {
+    console.error(e);
+    toast("面接候補の選択に失敗しました");
+  }
+}
+
 function chatDraftKey(applicationId) {
   if (!uid || !applicationId) return "";
   return `baitoapp.chatdraft.user.${uid}.${applicationId}`;
@@ -827,6 +862,86 @@ function exportChatLog({ applicationId, messages }) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function renderUserConversationList() {
+  if (!chatRooms) return;
+  if (!myConversations.length) {
+    chatRooms.innerHTML = `<p class="muted">会話はまだありません。</p>`;
+    return;
+  }
+  chatRooms.innerHTML = myConversations
+    .slice(0, 8)
+    .map((c) => {
+      const app = myApplications.find((a) => a.id === c.id);
+      const title = app?.jobTitle || c.jobId || c.id;
+      const unread = Number(c.unreadForUser || 0);
+      return `
+        <button type="button" class="btn" data-open-room="${escapeHtml(c.id)}" style="width:100%; text-align:left; margin-bottom:6px;">
+          ${escapeHtml(title)}
+          ${unread > 0 ? `<span class="status-pill">${unread}件未読</span>` : ""}
+        </button>
+      `;
+    })
+    .join("");
+
+  chatRooms.querySelectorAll("[data-open-room]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const appId = btn.getAttribute("data-open-room");
+      const app = myApplications.find((a) => a.id === appId);
+      if (!app) return;
+      currentChatAppId = app.id;
+      if (isMobile()) setView("chat", { push: true });
+      if (chatMeta) chatMeta.textContent = `${app.jobTitle || ""}（${app.shop || ""}）のチャット`;
+      if (chatWrap) chatWrap.innerHTML = "";
+
+      localPending = [];
+      remoteMessages = [];
+      typingRemote = { on: false, role: null };
+      loadDraft(app.id);
+      repaintChat();
+
+      if (unSubChat) unSubChat();
+      unSubChat = watchMessages(app.id, (msgs) => {
+        remoteMessages = Array.isArray(msgs) ? msgs : [];
+        repaintChat();
+      });
+      if (unSubConvMeta) unSubConvMeta();
+      unSubConvMeta = watchConversationMeta(app.id, (meta) => {
+        const typingAt = Number(meta?.typingAdminAt || 0);
+        const isTyping = typingAt > 0 && (Date.now() - typingAt) < 3500;
+        typingRemote = { on: isTyping, role: "admin" };
+        repaintChat();
+      });
+      await markRead({ applicationId: app.id, viewerRole: "user" });
+    });
+  });
+}
+
+function ensureNotificationPermission() {
+  if (typeof Notification === "undefined") return;
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
+function notifyUserUnreadChanges(rows) {
+  if (typeof Notification === "undefined") return;
+  if (Notification.permission !== "granted") return;
+  if (!document.hidden) {
+    lastUnreadUser = new Map(rows.map((r) => [r.id, Number(r.unreadForUser || 0)]));
+    return;
+  }
+  for (const r of rows) {
+    const prev = Number(lastUnreadUser.get(r.id) || 0);
+    const next = Number(r.unreadForUser || 0);
+    if (next > prev) {
+      new Notification("新着メッセージ", {
+        body: r.lastMessage || "メッセージがあります"
+      });
+    }
+  }
+  lastUnreadUser = new Map(rows.map((r) => [r.id, Number(r.unreadForUser || 0)]));
 }
 
 function toNumberOrNull(v) {

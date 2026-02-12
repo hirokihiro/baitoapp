@@ -4,48 +4,44 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BAITOAPP - 新規登録</title>
-  <link rel="stylesheet" href="./css/base.css" />
-  <link rel="stylesheet" href="./css/layout.css" />
-  <link rel="stylesheet" href="./css/components.css" />
-  <link rel="stylesheet" href="./css/style.css" />
-
+  <link rel="stylesheet" href="./css/entry-theme.css" />
 </head>
-<body>
-  <div class="container">
-    <header class="header">
+<body class="entry-screen">
+  <main class="entry-shell" aria-labelledby="regTitle">
+    <div class="entry-brand">
       <h1>BAITOAPP</h1>
-      <p class="muted">新規登録</p>
-    </header>
+      <p>最短1分でアカウント作成。</p>
+    </div>
 
-    <main class="card" aria-labelledby="regTitle">
-      <h2 id="regTitle" class="card-title">アカウント作成</h2>
+    <section class="entry-card">
+      <h2 id="regTitle" class="entry-title">アカウント作成</h2>
 
-      <form id="registerForm" class="form" novalidate>
-        <label class="label" for="name">名前</label>
-        <input class="input" type="text" id="name" autocomplete="name" required />
+      <form id="registerForm" class="entry-form" novalidate>
+        <label class="entry-label" for="name">名前</label>
+        <input class="entry-input" type="text" id="name" autocomplete="name" required />
 
-        <label class="label" for="email">メールアドレス</label>
-        <input class="input" type="email" id="email" autocomplete="email" required />
+        <label class="entry-label" for="email">メールアドレス</label>
+        <input class="entry-input" type="email" id="email" autocomplete="email" required />
 
-        <label class="label" for="password">パスワード（6文字以上）</label>
-        <input class="input" type="password" id="password" minlength="6" autocomplete="new-password" required />
+        <label class="entry-label" for="password">パスワード（6文字以上）</label>
+        <input class="entry-input" type="password" id="password" minlength="6" autocomplete="new-password" required />
 
-        <label class="label" for="role">アカウント種別</label>
-        <select id="role" class="select">
+        <label class="entry-label" for="role">アカウント種別</label>
+        <select id="role" class="entry-select">
           <option value="user" selected>一般ユーザー</option>
           <option value="admin">管理者</option>
         </select>
 
-        <button class="btn primary" type="submit">登録する</button>
+        <button class="entry-btn" type="submit">登録する</button>
       </form>
 
-      <div class="row">
-        <a class="link" href="./index.html">ログインへ戻る</a>
-      </div>
+      <p class="entry-links">
+        <a class="link" href="./login.html">ログインへ戻る</a>
+      </p>
 
-      <p id="msg" class="msg" aria-live="polite"></p>
-    </main>
-  </div>
+      <p id="msg" class="entry-msg" aria-live="polite"></p>
+    </section>
+  </main>
 
   <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
 

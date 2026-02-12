@@ -6,10 +6,10 @@
   --user-border-strong: #bccbe1;
   --user-text: #132238;
   --user-muted: #56708f;
-  --user-primary: #1565d8;
-  --user-primary-strong: #0f4fae;
-  --user-accent: #14a37f;
-  --user-danger: #d53a4e;
+  --user-primary: #1f74eb;
+  --user-primary-strong: #1663cb;
+  --user-accent: #2f8fa2;
+  --user-danger: #2b6bcf;
   --user-radius-xl: 22px;
   --user-radius-lg: 16px;
   --user-radius-md: 12px;
@@ -21,8 +21,8 @@ body.user {
   font-family: "Plus Jakarta Sans", "Zen Kaku Gothic New", "Noto Sans JP", system-ui, sans-serif;
   color: var(--user-text);
   background:
-    radial-gradient(1200px 580px at -8% -15%, rgba(21, 101, 216, 0.2), transparent 65%),
-    radial-gradient(760px 360px at 100% -10%, rgba(20, 163, 127, 0.16), transparent 65%),
+    radial-gradient(1200px 580px at -8% -15%, rgba(31, 116, 235, 0.2), transparent 65%),
+    radial-gradient(760px 360px at 100% -10%, rgba(47, 143, 162, 0.16), transparent 65%),
     linear-gradient(180deg, #f8fbff 0%, var(--user-bg) 68%, #eef3fb 100%);
 }
 
@@ -196,15 +196,15 @@ body.user .status-pill {
 }
 
 body.user .badge-hot {
-  border-color: #f1b8bf;
-  background: #fff0f2;
-  color: #a33847;
+  border-color: #b8d1f4;
+  background: #edf4ff;
+  color: #2c5ea7;
 }
 
 body.user .badge-urgent {
-  border-color: #a8e1d4;
-  background: #ebf9f4;
-  color: #1f7a61;
+  border-color: #bfdeef;
+  background: #eff8fd;
+  color: #2f7089;
 }
 
 body.user .fav-btn {
@@ -218,9 +218,9 @@ body.user .fav-btn {
 }
 
 body.user .fav-btn.on {
-  border-color: #f3b2bb;
-  background: #fff3f6;
-  color: #cc3f54;
+  border-color: #b8d1f4;
+  background: #edf4ff;
+  color: #2c5ea7;
 }
 
 body.user .job-sim {

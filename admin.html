@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="./css/layout.css" />
   <link rel="stylesheet" href="./css/components.css" />
   <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/main-theme.css" />
+  <link rel="stylesheet" href="./css/admin-polish.css" />
 </head>
 <body class="admin">
   <div class="container">
@@ -155,15 +157,14 @@
       <section class="card admin-panel admin-panel--chat" data-admin-view="chat">
         <h3 class="panel-title">応募者チャット</h3>
         <p class="muted">応募者一覧で「チャット」を押すとここに表示されます。</p>
-        <div id="chatRoomsAdmin" class="job-card" style="margin-bottom:8px;"></div>
+        <div id="chatRoomsAdmin" class="job-card admin-chat-rooms" aria-label="会話一覧"></div>
 
         <div id="chatMetaAdmin" class="muted" style="margin:8px 0;"></div>
 
         <!-- ★ ここが完成形 ★ -->
         <div
           id="chatWrapAdmin"
-          class="chat-wrap"
-          style="height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;">
+          class="chat-wrap admin-chat-wrap">
         </div>
 
         <div class="row" style="gap:8px; margin-top:10px;">

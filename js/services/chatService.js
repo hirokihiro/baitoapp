@@ -96,27 +96,32 @@ export async function sendMessage({ applicationId, senderUid, senderRole, text }
 
   const clean = (text || "").trim();
   if (!clean) return;
+  if (!applicationId || !senderUid || !senderRole) return;
+
+  const role = senderRole === "admin" ? "admin" : "user";
+
+  await ensureConversationForSend({ convRef, applicationId, senderUid, senderRole: role });
 
   await addDoc(msgCol, {
     senderUid,
-    senderRole, // "user" | "admin"
+    senderRole: role, // "user" | "admin"
     text: clean,
     createdAt: serverTimestamp(),
 
     // ✅ 既読用：まず送信者は既読
-    readBy: [senderRole]
+    readBy: [role]
   });
 
   const unreadUpdate =
-    senderRole === "admin"
+    role === "admin"
       ? { unreadForUser: increment(1) }
       : { unreadForAdmin: increment(1) };
 
-  await updateDoc(convRef, {
+  await setDoc(convRef, {
     updatedAt: serverTimestamp(),
     lastMessage: clean.slice(0, 80),
     ...unreadUpdate
-  });
+  }, { merge: true });
 }
 
 /**
@@ -165,4 +170,33 @@ function toMillisSafe(v) {
   if (Number.isFinite(n)) return n;
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+async function ensureConversationForSend({ convRef, applicationId, senderUid, senderRole }) {
+  const snap = await getDoc(convRef);
+  if (snap.exists()) return;
+
+  const { applicantUid, jobId } = deriveConversationSeeds(applicationId, senderUid, senderRole);
+  await setDoc(convRef, {
+    jobId,
+    applicantUid,
+    updatedAt: serverTimestamp(),
+    lastMessage: "",
+    unreadForAdmin: 0,
+    unreadForUser: 0,
+    typingUserAt: null,
+    typingAdminAt: null
+  }, { merge: true });
+}
+
+function deriveConversationSeeds(applicationId, senderUid, senderRole) {
+  const raw = String(applicationId || "");
+  const idx = raw.indexOf("_");
+  const idUid = idx > 0 ? raw.slice(0, idx) : "";
+  const idJob = idx > 0 ? raw.slice(idx + 1) : "";
+  const applicantUid = senderRole === "user"
+    ? senderUid
+    : (idUid || "");
+  const jobId = idJob || "";
+  return { applicantUid, jobId };
 }

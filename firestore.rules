@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isParticipant(appId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/conversations/$(appId))
+        && (
+          get(/databases/$(database)/documents/conversations/$(appId)).data.applicantUid == request.auth.uid
+          || isAdmin()
+        );
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /favorites/{favId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /applications/{applicationId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.jobId is string
+        && applicationId == (request.auth.uid + '_' + request.resource.data.jobId);
+
+      allow update: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    match /conversations/{applicationId} {
+      allow read: if isParticipant(applicationId);
+
+      allow create: if isSignedIn()
+        && (
+          request.resource.data.applicantUid == request.auth.uid
+          || isAdmin()
+        );
+
+      allow update: if isParticipant(applicationId);
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isParticipant(applicationId);
+
+        allow create: if isParticipant(applicationId)
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.senderRole in ['user', 'admin'];
+
+        allow update: if isParticipant(applicationId);
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}

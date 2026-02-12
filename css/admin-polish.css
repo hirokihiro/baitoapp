@@ -1,0 +1,298 @@
+/* Admin visual polish (loaded after css/style.css) */
+body.admin {
+  color: #16283f;
+  background:
+    radial-gradient(620px 300px at 0% -5%, rgba(31, 116, 235, 0.14), transparent 64%),
+    radial-gradient(620px 300px at 100% -5%, rgba(61, 143, 162, 0.12), transparent 64%),
+    #f3f6fb;
+}
+
+body.admin .container {
+  width: min(1080px, 95vw);
+  padding: 14px 0 96px;
+}
+
+body.admin .admin-header,
+body.admin .admin-shell,
+body.admin .admin-panel,
+body.admin .job-card {
+  border-radius: 14px;
+  border: 1px solid #d4deec;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(20, 36, 58, 0.08);
+}
+
+body.admin .admin-header {
+  padding: 14px 16px;
+}
+
+body.admin .admin-title h1 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  color: #14253b;
+}
+
+body.admin .admin-pill {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  border-color: rgba(31, 116, 235, 0.35);
+  background: rgba(31, 116, 235, 0.1);
+  color: #1d4f97;
+}
+
+body.admin .admin-shell {
+  padding: 16px;
+}
+
+body.admin .admin-hero {
+  margin-bottom: 12px;
+  padding: 4px 2px 12px;
+}
+
+body.admin .panel-title,
+body.admin .card-title,
+body.admin .job-title {
+  color: #1a2e49;
+}
+
+body.admin .muted,
+body.admin .msg,
+body.admin .job-meta {
+  color: #475f7c;
+}
+
+body.admin .input,
+body.admin .select,
+body.admin .textarea {
+  border: 1px solid #c8d7eb;
+  background: #ffffff;
+  color: #13243a;
+  min-height: 42px;
+}
+
+body.admin .btn {
+  min-height: 42px;
+  border: 1px solid #c8d7eb;
+  background: #ffffff;
+  color: #1c314f;
+  font-weight: 600;
+}
+
+body.admin .btn.primary {
+  border: none;
+  color: #ffffff;
+}
+
+body.admin .link {
+  color: #1f74eb;
+}
+
+body.admin #adminKpiRow {
+  gap: 10px;
+}
+
+body.admin #adminKpiRow .job-card {
+  min-width: 0 !important;
+  padding: 10px 12px;
+}
+
+body.admin #adminKpiRow .job-title {
+  margin-top: 2px;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+body.admin .admin-mobile-tabbar {
+  border-radius: 12px;
+  border: 1px solid #d0dced;
+  box-shadow: 0 12px 24px rgba(20, 36, 58, 0.14);
+}
+
+body.admin .admin-mobile-tabbar button {
+  font-size: 11px;
+  min-height: 40px;
+}
+
+body.admin .admin-mobile-tabbar button.active {
+  background: linear-gradient(135deg, #1f74eb, #1663cb);
+  border-color: rgba(22, 99, 203, 0.8);
+  color: #fff;
+}
+
+body.admin #chatWrapAdmin {
+  border: 1px solid #d5dfed !important;
+  background: #f8fbff !important;
+}
+
+body.admin .admin-chat-rooms {
+  margin-bottom: 10px;
+  padding: 8px;
+  max-height: 320px;
+  overflow: auto;
+  background: #f8fbff;
+}
+
+body.admin .admin-chat-empty {
+  margin: 8px 6px;
+}
+
+body.admin .admin-chat-room {
+  width: 100%;
+  border: 1px solid #cfdbec;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+
+body.admin .admin-chat-room:last-child {
+  margin-bottom: 0;
+}
+
+body.admin .admin-chat-room:hover {
+  border-color: #8eb5ec;
+  box-shadow: 0 6px 14px rgba(31, 116, 235, 0.12);
+}
+
+body.admin .admin-chat-room.is-active {
+  border-color: #4c8de7;
+  box-shadow: 0 8px 18px rgba(31, 116, 235, 0.18);
+}
+
+body.admin .admin-chat-room__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+body.admin .admin-chat-room__title {
+  display: block;
+  font-weight: 700;
+  color: #1c2f4a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.admin .admin-chat-room__time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #5f7696;
+}
+
+body.admin .admin-chat-room__meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6e84a2;
+}
+
+body.admin .admin-chat-room__preview {
+  display: -webkit-box;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #334f72;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+body.admin .admin-chat-room__unread {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  border: 1px solid #9ebff1;
+  color: #255da7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body.admin .admin-chat-room.is-unread {
+  border-color: #9ebff1;
+}
+
+body.admin .admin-chat-wrap {
+  height: 320px;
+  overflow: auto;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+@media (max-width: 980px) {
+  body.admin .container {
+    width: min(100%, 100vw);
+    padding: 10px 10px calc(94px + env(safe-area-inset-bottom));
+  }
+
+  body.admin .admin-header,
+  body.admin .admin-shell,
+  body.admin .admin-panel,
+  body.admin .job-card {
+    border-radius: 12px;
+  }
+
+  body.admin .admin-title h1 {
+    font-size: 28px;
+  }
+
+  body.admin .admin-actions {
+    gap: 8px;
+  }
+
+  body.admin .admin-actions .link {
+    font-size: 14px;
+  }
+
+  body.admin #adminKpiRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.admin #adminKpiRow .job-title {
+    font-size: clamp(28px, 7vw, 40px);
+  }
+
+  body.admin [data-admin-view] {
+    margin-top: 0;
+  }
+
+  body.admin .admin-chat-rooms {
+    max-height: 280px;
+  }
+
+  body.admin .admin-chat-wrap {
+    height: min(48vh, 360px);
+  }
+}
+
+@media (max-width: 480px) {
+  body.admin .admin-title h1 {
+    font-size: 24px;
+  }
+
+  body.admin .admin-pill {
+    font-size: 10px;
+  }
+
+  body.admin #adminKpiRow {
+    grid-template-columns: 1fr;
+  }
+
+  body.admin .admin-header .admin-actions .btn {
+    min-width: 92px;
+    font-size: 13px;
+  }
+}

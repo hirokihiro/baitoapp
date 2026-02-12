@@ -4,7 +4,10 @@ import { listJobs, createJob, updateJob, removeJob, normalizeTags } from "./serv
 import {
   getApplicationCountsByJob,
   listApplicationsByJobId,
-  updateApplicationStatus
+  updateApplicationStatus,
+  updateApplicationAdminFields,
+  proposeInterviewSlots,
+  listAllApplications
 } from "./services/applicationsService.js";
 import { renderApplications } from "./ui/renderApplications.js";
 import { toast } from "./ui/toast.js";
@@ -16,7 +19,8 @@ import {
   sendMessage,
   markRead,
   watchConversationMeta,
-  setTypingState
+  setTypingState,
+  watchAllConversations
 } from "./services/chatService.js";
 import { renderChat } from "./ui/renderChat.js";
 
@@ -30,6 +34,8 @@ const adminMsg = document.getElementById("adminMsg");
 const jobForm = document.getElementById("jobForm");
 const resetBtn = document.getElementById("resetBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
+const jobTemplateSelect = document.getElementById("jobTemplateSelect");
+const saveJobTemplateBtn = document.getElementById("saveJobTemplateBtn");
 
 const titleEl = document.getElementById("title");
 const shopEl = document.getElementById("shop");
@@ -57,6 +63,8 @@ const appsMsgAdmin = document.getElementById("appsMsgAdmin");
 const appsWrapAdmin = document.getElementById("appsWrapAdmin");
 const appsStatusFilterAdmin = document.getElementById("appsStatusFilterAdmin");
 const exportAppsCsvBtn = document.getElementById("exportAppsCsvBtn");
+const importAppsCsvBtn = document.getElementById("importAppsCsvBtn");
+const importAppsCsvFile = document.getElementById("importAppsCsvFile");
 
 const profileMsgAdmin = document.getElementById("profileMsgAdmin");
 const profileWrapAdmin = document.getElementById("profileWrapAdmin");
@@ -66,6 +74,7 @@ const chatMetaAdmin = document.getElementById("chatMetaAdmin");
 const chatWrapAdmin = document.getElementById("chatWrapAdmin");
 const chatInputAdmin = document.getElementById("chatInputAdmin");
 const chatTemplateAdmin = document.getElementById("chatTemplateAdmin");
+const chatRoomsAdmin = document.getElementById("chatRoomsAdmin");
 const chatExportBtnAdmin = document.getElementById("chatExportBtnAdmin");
 const chatClearDraftBtnAdmin = document.getElementById("chatClearDraftBtnAdmin");
 const chatSendAdmin = document.getElementById("chatSendAdmin");
@@ -83,6 +92,11 @@ let selectedJob = null;
 let selectedApplications = [];
 let jobsQueryDebounce = null;
 let adminCurrentView = "jobs";
+let allApplications = [];
+let allConversations = [];
+let unSubConversations = null;
+let lastUnreadAdmin = new Map();
+const ADMIN_TEMPLATE_KEY = "baitoapp.admin.jobtemplates.v1";
 
 // chat state
 let currentChatAppId = null;
@@ -135,7 +149,16 @@ watchAuth(async (user) => {
 
   adminMsg.textContent = "";
   setAdminView("jobs");
+  initJobTemplates();
+  ensureNotificationPermission();
   await refresh();
+
+  if (unSubConversations) unSubConversations();
+  unSubConversations = watchAllConversations((rows) => {
+    allConversations = rows || [];
+    renderAdminConversationList();
+    notifyAdminUnreadChanges(rows || []);
+  });
 });
 
 adminTabButtons.forEach((btn) => {
@@ -163,6 +186,46 @@ adminSort?.addEventListener("change", async () => {
 refreshJobsBtn?.addEventListener("click", async () => {
   await refresh();
   toast("求人一覧を更新しました");
+});
+
+jobTemplateSelect?.addEventListener("change", () => {
+  const id = jobTemplateSelect.value;
+  if (!id) return;
+  const templates = readJobTemplates();
+  const found = templates.find((t) => t.id === id);
+  if (!found) return;
+  if (titleEl) titleEl.value = found.title || "";
+  if (shopEl) shopEl.value = found.shop || "";
+  if (areaEl) areaEl.value = found.area || "";
+  if (wageEl) wageEl.value = found.wage || "";
+  if (shiftEl) shiftEl.value = found.shift || "";
+  if (descriptionEl) descriptionEl.value = found.description || "";
+  if (tagsTextEl) tagsTextEl.value = found.tagsText || "";
+  toast("テンプレートを適用しました");
+});
+
+saveJobTemplateBtn?.addEventListener("click", () => {
+  const payload = readJobForm();
+  if (!payload.title) {
+    toast("タイトルを入力してから保存してください");
+    return;
+  }
+  const templates = readJobTemplates();
+  const item = {
+    id: `tpl_${Date.now()}`,
+    title: payload.title,
+    shop: payload.shop,
+    area: payload.area,
+    wage: payload.wage,
+    shift: payload.shift,
+    description: payload.description,
+    tagsText: (tagsTextEl?.value || "").trim()
+  };
+  templates.unshift(item);
+  writeJobTemplates(templates.slice(0, 20));
+  initJobTemplates();
+  jobTemplateSelect.value = item.id;
+  toast("テンプレートを保存しました");
 });
 
 appsStatusFilterAdmin?.addEventListener("change", renderApplicantsPanel);
@@ -205,6 +268,39 @@ exportAppsCsvBtn?.addEventListener("click", () => {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+});
+
+importAppsCsvBtn?.addEventListener("click", () => {
+  importAppsCsvFile?.click();
+});
+
+importAppsCsvFile?.addEventListener("change", async () => {
+  const file = importAppsCsvFile.files?.[0];
+  if (!file) return;
+
+  const text = await file.text();
+  const rows = parseSimpleCsv(text);
+  let updated = 0;
+
+  for (const row of rows) {
+    const applicationId = row.applicationId || row.id || "";
+    const status = row.status || "";
+    if (!applicationId || !status) continue;
+    try {
+      await updateApplicationStatus(applicationId, status);
+      updated += 1;
+    } catch (e) {
+      console.error("CSV status update failed", applicationId, e);
+    }
+  }
+
+  importAppsCsvFile.value = "";
+  await refresh();
+  if (selectedJob) {
+    const nextJob = allJobs.find((j) => j.id === selectedJob.id);
+    if (nextJob) await showApplicants(nextJob, { silentLoading: true });
+  }
+  toast(`CSVで${updated}件更新しました`);
 });
 
 chatTemplateAdmin?.addEventListener("change", () => {
@@ -291,6 +387,7 @@ async function refresh() {
   try {
     allJobs = await listJobs(adminSort?.value || "new");
     countsMap = await getApplicationCountsByJob();
+    allApplications = await listAllApplications();
     jobsMsg.textContent = "";
 
     updateDashboard();
@@ -322,8 +419,9 @@ function updateDashboard() {
     ? Math.round(wages.reduce((sum, w) => sum + w, 0) / wages.length)
     : 0;
 
+  const todayCount = allApplications.filter((a) => isToday(a.createdAt)).length;
   if (kpiJobs) kpiJobs.textContent = `${allJobs.length}件`;
-  if (kpiApps) kpiApps.textContent = `${appsTotal}件`;
+  if (kpiApps) kpiApps.textContent = `${appsTotal}件 / 今日${todayCount}件`;
   if (kpiWage) kpiWage.textContent = `¥${wageAvg.toLocaleString()}`;
 }
 
@@ -515,21 +613,113 @@ function renderApplicantsPanel() {
     onShowProfile: (applicantUid) => showApplicantProfile(applicantUid),
     onUpdateStatus: async (applicationId, status) => {
       await updateStatus(applicationId, status);
+    },
+    onProposeInterview: async (applicationId, slots) => {
+      await handleProposeInterview(applicationId, slots);
+    },
+    onSaveAdminMeta: async (applicationId, meta) => {
+      await handleSaveAdminMeta(applicationId, meta);
     }
   });
 }
 
 async function updateStatus(applicationId, status) {
+  const nextStatus = String(status || "選考中").trim() || "選考中";
   try {
-    await updateApplicationStatus(applicationId, status);
-    selectedApplications = selectedApplications.map((a) =>
-      a.id === applicationId ? { ...a, status } : a
-    );
-    renderApplicantsPanel();
-    toast(`ステータスを「${status}」に更新しました`);
+    await updateApplicationStatus(applicationId, nextStatus);
   } catch (err) {
     console.error(err);
     toast("ステータス更新に失敗しました");
+    return;
+  }
+
+  selectedApplications = selectedApplications.map((a) =>
+    a.id === applicationId ? { ...a, status: nextStatus } : a
+  );
+  renderApplicantsPanel();
+  toast(`ステータスを「${nextStatus}」に更新しました`);
+
+  const app = selectedApplications.find((a) => a.id === applicationId);
+  if (!app) return;
+
+  const text = buildStatusMessage(nextStatus, app.jobTitle || "");
+  if (!text) return;
+
+  try {
+    await ensureConversation({
+      applicationId: app.id,
+      jobId: app.jobId,
+      applicantUid: app.uid
+    });
+    await sendMessage({
+      applicationId: app.id,
+      senderUid: uid,
+      senderRole: "admin",
+      text
+    });
+  } catch (err) {
+    console.error("status message send failed", err);
+    toast("ステータスは更新しましたが、通知メッセージ送信に失敗しました");
+  }
+}
+
+async function handleProposeInterview(applicationId, slots) {
+  const clean = (slots || []).map((s) => String(s || "").trim()).filter(Boolean).slice(0, 2);
+  if (!clean.length) {
+    toast("面接候補日時を入力してください");
+    return;
+  }
+  try {
+    await proposeInterviewSlots(applicationId, clean);
+    selectedApplications = selectedApplications.map((a) =>
+      a.id === applicationId
+        ? {
+            ...a,
+            interviewProposal: { ...(a.interviewProposal || {}), slots: clean, selected: "" }
+          }
+        : a
+    );
+    const app = selectedApplications.find((a) => a.id === applicationId);
+    if (app) {
+      await ensureConversation({
+        applicationId: app.id,
+        jobId: app.jobId,
+        applicantUid: app.uid
+      });
+      await sendMessage({
+        applicationId: app.id,
+        senderUid: uid,
+        senderRole: "admin",
+        text: `面接候補です: ${clean.join(" / ")}`
+      });
+    }
+    renderApplicantsPanel();
+    toast("面接候補を送信しました");
+  } catch (e) {
+    console.error(e);
+    toast("面接候補の送信に失敗しました");
+  }
+}
+
+async function handleSaveAdminMeta(applicationId, meta) {
+  try {
+    await updateApplicationAdminFields(applicationId, {
+      adminMemo: String(meta?.memo || "").trim(),
+      adminTags: Array.isArray(meta?.tags) ? meta.tags.slice(0, 10) : []
+    });
+    selectedApplications = selectedApplications.map((a) =>
+      a.id === applicationId
+        ? {
+            ...a,
+            adminMemo: String(meta?.memo || "").trim(),
+            adminTags: Array.isArray(meta?.tags) ? meta.tags.slice(0, 10) : []
+          }
+        : a
+    );
+    toast("メモ/タグを保存しました");
+  } catch (e) {
+    console.error(e);
+    toast("メモ/タグ保存に失敗しました");
   }
 }
 
@@ -587,6 +777,7 @@ async function openChat(app) {
   }
 
   chatMetaAdmin.textContent = `${app.jobTitle || ""} / 応募者：${displayName}`;
+  renderAdminConversationList();
 
   localPending = [];
   remoteMessages = [];
@@ -763,6 +954,16 @@ function formatWhen(createdAt) {
   return `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
+function formatConversationTime(updatedAt) {
+  const d = toDateSafe(updatedAt);
+  if (!d) return "";
+  const diffMin = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (diffMin < 1) return "たった今";
+  if (diffMin < 60) return `${diffMin}分前`;
+  if (diffMin < 24 * 60) return `${Math.floor(diffMin / 60)}時間前`;
+  return `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
 function toDateSafe(v) {
   if (!v) return null;
   if (typeof v?.toDate === "function") return v.toDate();
@@ -832,4 +1033,166 @@ function updateAdminMobileLayout(view) {
 
   const shellTop = document.querySelector(".admin-shell");
   shellTop?.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+function initJobTemplates() {
+  if (!jobTemplateSelect) return;
+  const templates = readJobTemplates();
+  jobTemplateSelect.innerHTML = `<option value="">テンプレートを選択</option>${templates
+    .map((t) => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.title || "無題テンプレ")}</option>`)
+    .join("")}`;
+}
+
+function readJobTemplates() {
+  try {
+    const raw = localStorage.getItem(ADMIN_TEMPLATE_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeJobTemplates(list) {
+  try {
+    localStorage.setItem(ADMIN_TEMPLATE_KEY, JSON.stringify(list || []));
+  } catch (e) {
+    console.error("save templates failed", e);
+  }
+}
+
+function renderAdminConversationList() {
+  if (!chatRoomsAdmin) return;
+  if (!allConversations.length) {
+    chatRoomsAdmin.innerHTML = `<p class="muted admin-chat-empty">会話はまだありません。</p>`;
+    return;
+  }
+
+  const rows = allConversations.slice(0, 50);
+  chatRoomsAdmin.innerHTML = rows
+    .map((c) => {
+      const app = allApplications.find((a) => a.id === c.id);
+      const title = app?.jobTitle || c.jobId || c.id;
+      const shop = app?.shop || "店舗未設定";
+      const preview = c.lastMessage || "メッセージはまだありません。";
+      const unread = Number(c.unreadForAdmin || 0);
+      const updatedLabel = formatConversationTime(c.updatedAt);
+      const isActive = Boolean(currentChatAppId && currentChatAppId === c.id);
+      return `
+        <button
+          type="button"
+          class="admin-chat-room${isActive ? " is-active" : ""}${unread > 0 ? " is-unread" : ""}"
+          data-open-room="${escapeHtml(c.id)}"
+          aria-label="${escapeHtml(title)} のチャットを開く"
+        >
+          <span class="admin-chat-room__header">
+            <span class="admin-chat-room__title">${escapeHtml(title)}</span>
+            <span class="admin-chat-room__time">${escapeHtml(updatedLabel)}</span>
+          </span>
+          <span class="admin-chat-room__meta">${escapeHtml(shop)}</span>
+          <span class="admin-chat-room__preview">${escapeHtml(preview)}</span>
+          ${unread > 0 ? `<span class="admin-chat-room__unread">${unread}件未読</span>` : ""}
+        </button>
+      `;
+    })
+    .join("");
+
+  chatRoomsAdmin.querySelectorAll("[data-open-room]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const appId = btn.getAttribute("data-open-room");
+      const app = allApplications.find((a) => a.id === appId);
+      if (app) {
+        await openChat(app);
+      } else {
+        toast("応募情報が見つかりません");
+      }
+    });
+  });
+}
+
+function ensureNotificationPermission() {
+  if (typeof Notification === "undefined") return;
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
+function notifyAdminUnreadChanges(rows) {
+  if (typeof Notification === "undefined") return;
+  if (Notification.permission !== "granted") return;
+  if (!document.hidden) {
+    lastUnreadAdmin = new Map(rows.map((r) => [r.id, Number(r.unreadForAdmin || 0)]));
+    return;
+  }
+
+  for (const r of rows) {
+    const prev = Number(lastUnreadAdmin.get(r.id) || 0);
+    const next = Number(r.unreadForAdmin || 0);
+    if (next > prev) {
+      new Notification("新着メッセージ", {
+        body: r.lastMessage || "メッセージがあります"
+      });
+    }
+  }
+
+  lastUnreadAdmin = new Map(rows.map((r) => [r.id, Number(r.unreadForAdmin || 0)]));
+}
+
+function buildStatusMessage(status, title) {
+  if (status === "面接予定") return `${title} の選考は面接予定に進みました。詳細は追ってご連絡します。`;
+  if (status === "採用") return `${title} へのご応募ありがとうございます。採用となりました。初回勤務についてご連絡します。`;
+  if (status === "不採用") return `${title} へのご応募ありがとうございました。今回は見送りとなりました。`;
+  return "";
+}
+
+function isToday(ts) {
+  const d = toDateSafe(ts);
+  if (!d) return false;
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear()
+    && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate();
+}
+
+function parseSimpleCsv(text) {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!lines.length) return [];
+  const headers = splitCsvLine(lines[0]);
+  return lines.slice(1).map((line) => {
+    const cols = splitCsvLine(line);
+    const row = {};
+    headers.forEach((h, i) => {
+      row[h] = cols[i] ?? "";
+    });
+    return row;
+  });
+}
+
+function splitCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === "\"") {
+      if (quoted && line[i + 1] === "\"") {
+        cur += "\"";
+        i += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+    if (ch === "," && !quoted) {
+      out.push(cur);
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  out.push(cur);
+  return out.map((s) => s.trim());
 }
