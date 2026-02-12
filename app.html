@@ -8,11 +8,15 @@
   <link rel="stylesheet" href="./css/layout.css" />
   <link rel="stylesheet" href="./css/components.css" />
   <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/app-pro.css" />
 </head>
 <body class="user">
   <div class="container">
     <header class="header row space-between">
       <div class="row" style="gap:10px; align-items:center;">
+        <button id="backBtn" class="btn back-btn" type="button" aria-label="前の画面に戻る">
+          ←
+        </button>
         <button id="menuBtn" class="hamburger" type="button" aria-label="メニューを開く" aria-controls="mobileMenu" aria-expanded="false">
           ☰
         </button>
@@ -59,15 +63,19 @@
             <option value="wage_desc">時給が高い順</option>
             <option value="wage_asc">時給が低い順</option>
           </select>
+          <input id="minWage" class="input filter-number" type="number" min="0" step="50" placeholder="最低時給" />
+          <input id="maxWage" class="input filter-number" type="number" min="0" step="50" placeholder="最高時給" />
         </div>
 
         <div class="row" style="gap:8px; margin-top:10px; flex-wrap:wrap;">
           <button id="showAllBtn" class="btn" type="button">すべて</button>
           <button id="showFavBtn" class="btn" type="button">♡ お気に入り</button>
+          <button id="resetFiltersBtn" class="btn" type="button">条件クリア</button>
         </div>
 
         <hr class="sep" />
 
+        <p id="jobsStats" class="muted" style="margin:0 0 6px;"></p>
         <p id="jobsMsg" class="msg" aria-live="polite"></p>
         <div id="jobsWrap"></div>
 
@@ -85,8 +93,19 @@
       <section class="card" data-view="chat" aria-labelledby="chatTitle">
         <h2 id="chatTitle" class="card-title">チャット</h2>
         <p class="muted">応募履歴の「チャット」ボタンから開きます。</p>
+        <div id="chatRooms" class="job-card" style="margin-bottom:8px;"></div>
 
         <div id="chatMeta" class="muted" style="margin:8px 0;"></div>
+        <div class="row" style="gap:8px; margin-bottom:8px;">
+          <select id="chatTemplate" class="select">
+            <option value="">定型文を挿入</option>
+            <option value="ご連絡ありがとうございます。よろしくお願いします。">挨拶</option>
+            <option value="今週の勤務可能日は、◯曜と◯曜です。">勤務可能日</option>
+            <option value="面接可能日は◯/◯の◯時以降です。">面接可能日</option>
+          </select>
+          <button id="chatExportBtn" class="btn" type="button">会話を保存</button>
+          <button id="chatClearDraftBtn" class="btn" type="button">下書きクリア</button>
+        </div>
         <div id="chatWrap" class="chat-wrap" style="height:260px; overflow:auto; padding:10px;"></div>
 
         <div class="row" style="gap:8px; margin-top:10px;">
@@ -135,7 +154,51 @@
     </div>
   </div>
 
+  <!-- 求人詳細モーダル -->
+  <div id="jobDetailModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="jobDetailTitle">
+    <div class="modal-backdrop" data-close="1"></div>
+    <div class="modal-card">
+      <div class="row space-between" style="align-items:flex-start; gap:10px;">
+        <div>
+          <h3 id="jobDetailTitle" class="card-title">求人詳細</h3>
+          <p id="jobDetailShop" class="muted"></p>
+        </div>
+        <button id="jobDetailClose" class="btn" type="button" data-close="1" aria-label="閉じる">閉じる</button>
+      </div>
+
+      <div id="jobDetailBadges" class="job-badges" style="margin-top:6px;"></div>
+
+      <div class="job-wage-row" style="margin-top:12px;">
+        <div id="jobDetailWage" class="job-wage-large"></div>
+        <div id="jobDetailSubmeta" class="job-submeta"></div>
+      </div>
+
+      <div class="job-meta" id="jobDetailArea"></div>
+      <div class="job-meta" id="jobDetailShift"></div>
+      <div class="job-meta" id="jobDetailCount"></div>
+
+      <div class="job-sim" id="jobDetailSim"></div>
+
+      <hr class="sep" />
+
+      <div class="job-meta" style="font-weight:600;">仕事内容</div>
+      <div id="jobDetailDesc" class="job-detail-desc"></div>
+
+      <div class="job-actions" style="margin-top:14px;">
+        <button id="jobDetailApply" class="btn primary" type="button">応募する</button>
+        <button id="jobDetailFav" class="btn" type="button">♡ お気に入り</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+
+  <nav id="mobileTabbar" class="mobile-tabbar" aria-label="クイックナビ">
+    <button type="button" data-target="jobs" class="active">求人</button>
+    <button type="button" data-target="applications">応募</button>
+    <button type="button" data-target="chat">チャット</button>
+    <button type="button" data-target="profile">プロフィール</button>
+  </nav>
 
   <script type="module" src="./js/main-app.js"></script>
 </body>

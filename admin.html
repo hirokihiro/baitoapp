@@ -24,7 +24,7 @@
     </header>
 
     <main class="card admin-shell">
-      <div class="admin-hero">
+      <div id="adminHero" class="admin-hero">
         <div>
           <h2 class="card-title">管理者画面</h2>
           <p class="muted">投稿から応募者対応まで、ここで完結。</p>
@@ -34,11 +34,31 @@
           <span class="admin-chip">リアルタイム更新</span>
         </div>
       </div>
+      <div id="adminKpiRow" class="row" style="gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+        <div class="job-card" style="min-width:170px;">
+          <div class="job-meta">公開中求人</div>
+          <div id="kpiJobs" class="job-title">0件</div>
+        </div>
+        <div class="job-card" style="min-width:170px;">
+          <div class="job-meta">総応募数</div>
+          <div id="kpiApps" class="job-title">0件</div>
+        </div>
+        <div class="job-card" style="min-width:170px;">
+          <div class="job-meta">平均時給</div>
+          <div id="kpiWage" class="job-title">¥0</div>
+        </div>
+      </div>
       <p id="adminMsg" class="msg" aria-live="polite"></p>
 
       <div class="admin-grid">
-      <section class="card admin-panel admin-panel--post">
+      <section class="card admin-panel admin-panel--post" data-admin-view="post">
         <h3 class="panel-title">求人を投稿</h3>
+        <div class="row" style="gap:8px; margin-bottom:8px;">
+          <select id="jobTemplateSelect" class="select">
+            <option value="">テンプレートを選択</option>
+          </select>
+          <button id="saveJobTemplateBtn" class="btn" type="button">テンプレ保存</button>
+        </div>
         <form id="jobForm" class="form" novalidate>
           <label class="label" for="title">タイトル</label>
           <input class="input" id="title" required />
@@ -70,34 +90,57 @@
 
           <div class="row" style="gap:8px;">
             <button class="btn primary" type="submit">投稿する</button>
+            <button id="cancelEditBtn" class="btn" type="button" style="display:none;">編集をやめる</button>
             <button id="resetBtn" class="btn" type="button">クリア</button>
           </div>
         </form>
       </section>
 
-      <section class="card admin-panel admin-panel--jobs">
+      <section class="card admin-panel admin-panel--jobs" data-admin-view="jobs">
         <h3 class="panel-title">求人一覧（編集/削除）</h3>
         <div class="row" style="gap:8px; flex-wrap:wrap;">
           <input id="adminQ" class="input" placeholder="検索（タイトル/店舗/タグ）" />
+          <select id="adminAreaFilter" class="select">
+            <option value="">エリア（すべて）</option>
+            <option value="東京">東京</option>
+            <option value="大阪">大阪</option>
+            <option value="名古屋">名古屋</option>
+            <option value="福岡">福岡</option>
+            <option value="郊外">郊外</option>
+          </select>
           <select id="adminSort" class="select">
             <option value="new">新着順</option>
             <option value="wage_desc">時給が高い順</option>
             <option value="wage_asc">時給が低い順</option>
           </select>
+          <button id="refreshJobsBtn" class="btn" type="button">再読み込み</button>
         </div>
 
+        <p id="jobsStatsAdmin" class="muted" style="margin-top:8px;"></p>
         <div id="jobsWrap" style="margin-top:10px;"></div>
         <p id="jobsMsg" class="msg" aria-live="polite"></p>
       </section>
 
-      <section class="card admin-panel admin-panel--apps">
+      <section class="card admin-panel admin-panel--apps" data-admin-view="apps">
         <h3 class="panel-title">応募者一覧（求人ごと）</h3>
         <p class="muted">求人の「応募者を見る」ボタンを押すと、応募者が表示されます。</p>
+        <div class="row" style="gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+          <select id="appsStatusFilterAdmin" class="select">
+            <option value="">ステータス（すべて）</option>
+            <option value="選考中">選考中</option>
+            <option value="面接予定">面接予定</option>
+            <option value="採用">採用</option>
+            <option value="不採用">不採用</option>
+          </select>
+          <button id="exportAppsCsvBtn" class="btn" type="button">CSV出力</button>
+          <button id="importAppsCsvBtn" class="btn" type="button">CSV一括更新</button>
+          <input id="importAppsCsvFile" type="file" accept=".csv,text/csv" hidden />
+        </div>
         <p id="appsMsgAdmin" class="msg" aria-live="polite"></p>
         <div id="appsWrapAdmin"></div>
       </section>
 
-      <section class="card admin-panel admin-panel--profile">
+      <section class="card admin-panel admin-panel--profile" data-admin-view="profile">
         <h3 class="panel-title">応募者プロフィール</h3>
         <p class="muted">応募者一覧で「プロフィール」を押すと表示されます。</p>
 
@@ -109,9 +152,10 @@
       </section>
 
 
-      <section class="card admin-panel admin-panel--chat">
+      <section class="card admin-panel admin-panel--chat" data-admin-view="chat">
         <h3 class="panel-title">応募者チャット</h3>
         <p class="muted">応募者一覧で「チャット」を押すとここに表示されます。</p>
+        <div id="chatRoomsAdmin" class="job-card" style="margin-bottom:8px;"></div>
 
         <div id="chatMetaAdmin" class="muted" style="margin:8px 0;"></div>
 
@@ -123,6 +167,15 @@
         </div>
 
         <div class="row" style="gap:8px; margin-top:10px;">
+          <select id="chatTemplateAdmin" class="select">
+            <option value="">定型文を挿入</option>
+            <option value="ご応募ありがとうございます。内容を確認し、追ってご連絡します。">応募受付</option>
+            <option value="面接候補日は◯/◯(◯) 18:00- または ◯/◯(◯) 19:00- です。ご都合いかがでしょうか。">面接日程の確認</option>
+            <option value="今回は見送りとなりました。ご応募ありがとうございました。">不採用連絡</option>
+            <option value="採用となりました。初回勤務日についてご案内します。">採用連絡</option>
+          </select>
+          <button id="chatExportBtnAdmin" class="btn" type="button">会話を保存</button>
+          <button id="chatClearDraftBtnAdmin" class="btn" type="button">下書きクリア</button>
           <input id="chatInputAdmin" class="input" placeholder="メッセージ…" />
           <button id="chatSendAdmin" class="btn primary" type="button">送信</button>
         </div>
@@ -135,6 +188,14 @@
   </div>
 
   <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-relevant="additions"></div>
+
+  <nav id="adminMobileTabbar" class="admin-mobile-tabbar" aria-label="管理者メニュー">
+    <button type="button" data-admin-target="post">投稿</button>
+    <button type="button" data-admin-target="jobs" class="active">求人</button>
+    <button type="button" data-admin-target="apps">応募</button>
+    <button type="button" data-admin-target="profile">プロフィール</button>
+    <button type="button" data-admin-target="chat">チャット</button>
+  </nav>
 
   <script type="module" src="./js/main-admin.js"></script>
 </body>

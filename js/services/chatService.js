@@ -32,7 +32,24 @@ export async function ensureConversation({ applicationId, jobId, applicantUid })
     updatedAt: serverTimestamp(),
     lastMessage: "",
     unreadForAdmin: 0,
-    unreadForUser: 0
+    unreadForUser: 0,
+    typingUserAt: null,
+    typingAdminAt: null
+  });
+}
+
+export function watchConversationMeta(applicationId, onChange) {
+  const ref = doc(db, "conversations", applicationId);
+  return onSnapshot(ref, (snap) => {
+    onChange(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+  });
+}
+
+export async function setTypingState({ applicationId, role, isTyping }) {
+  if (!applicationId || !role) return;
+  const key = role === "admin" ? "typingAdminAt" : "typingUserAt";
+  await updateDoc(doc(db, "conversations", applicationId), {
+    [key]: isTyping ? Date.now() : null
   });
 }
 

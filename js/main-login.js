@@ -1,4 +1,4 @@
-import { login } from "./services/authService.js";
+import { login, watchAuth, fetchMyProfile } from "./services/authService.js";
 import { toast } from "./ui/toast.js";
 
 const form = document.getElementById("loginForm");
@@ -29,10 +29,20 @@ form?.addEventListener("submit", async (e) => {
   try {
     const { profile } = await login(email, password);
     toast("ログインしました");
-    location.href = profile?.role === "admin" ? "./admin.html" : "./app.html";
+    location.replace(profile?.role === "admin" ? "./admin.html" : "./app.html");
   } catch (err) {
     console.error(err);
     msg.textContent = `ログインに失敗しました：${err.code || err.message || "unknown"}`;
   }
 
+});
+
+watchAuth(async (user) => {
+  if (!user) return;
+  try {
+    const profile = await fetchMyProfile();
+    location.replace(profile?.role === "admin" ? "./admin.html" : "./app.html");
+  } catch (e) {
+    console.error(e);
+  }
 });

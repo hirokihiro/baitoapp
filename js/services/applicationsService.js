@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
   getDocs,
   query,
   where,
@@ -37,6 +38,14 @@ export async function applyToJob({ uid, jobId, jobTitle, shop }) {
 export async function cancelApplication({ uid, jobId }) {
   const id = `${uid}_${jobId}`;
   await deleteDoc(doc(db, "applications", id));
+}
+
+export async function updateApplicationStatus(applicationId, status) {
+  if (!applicationId) return;
+  await updateDoc(doc(db, "applications", applicationId), {
+    status: String(status || "選考中"),
+    updatedAt: serverTimestamp()
+  });
 }
 
 /**

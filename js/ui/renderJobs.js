@@ -7,13 +7,15 @@ export function renderJobs({
   countsMap,
   onToggleFav,
   onRequestApply,
-  onCancelApply
+  onCancelApply,
+  onOpenDetail
 }) {
   wrapEl.innerHTML = "";
 
   if (!jobs.length) return;
 
   const list = document.createElement("div");
+  const jobsById = new Map(jobs.map((job) => [String(job.id), job]));
   list.style.display = "grid";
   list.style.gap = "10px";
 
@@ -31,6 +33,8 @@ export function renderJobs({
       ? `目安：週2×4hで月約¥${formatYen(wage * 32)}`
       : "";
     const subMeta = buildSubMeta(job);
+
+    const countLine = count ? `<div class="job-meta">応募者数：<b>${count}</b>人</div>` : ``;
 
     card.innerHTML = `
       <div class="job-topbar">
@@ -52,10 +56,11 @@ export function renderJobs({
       <div class="job-meta">店舗：${escapeHtml(job.shop || "")}</div>
       <div class="job-meta">エリア：${escapeHtml(job.area || "")}</div>
       <div class="job-meta">シフト：${escapeHtml(job.shift || "")}</div>
-      <div class="job-meta">応募者数：<b>${count}</b>人</div>
+      ${countLine}
       ${simText ? `<div class="job-sim">${simText}</div>` : ``}
 
       <div class="job-actions">
+        <button class="btn" data-detail="${job.id}">詳細を見る</button>
         ${
           applied
             ? `
@@ -69,20 +74,36 @@ export function renderJobs({
       </div>
     `;
 
-    card.querySelector(`[data-fav="${job.id}"]`)?.addEventListener("click", async () => {
-      await onToggleFav?.(job.id, !fav);
-    });
-
-    card.querySelector(`[data-apply="${job.id}"]`)?.addEventListener("click", () => {
-      onRequestApply?.(job);
-    });
-
-    card.querySelector(`[data-cancel="${job.id}"]`)?.addEventListener("click", async () => {
-      await onCancelApply?.(job.id);
-    });
-
     list.appendChild(card);
   }
+
+  list.addEventListener("click", async (e) => {
+    const target = e.target?.closest?.("button[data-fav], button[data-apply], button[data-detail], button[data-cancel]");
+    if (!target) return;
+
+    if (target.dataset.fav) {
+      const jobId = target.dataset.fav;
+      const next = !(favoritesSet?.has(jobId));
+      await onToggleFav?.(jobId, next);
+      return;
+    }
+
+    if (target.dataset.apply) {
+      const job = jobsById.get(String(target.dataset.apply));
+      if (job) onRequestApply?.(job);
+      return;
+    }
+
+    if (target.dataset.detail) {
+      const job = jobsById.get(String(target.dataset.detail));
+      if (job) onOpenDetail?.(job);
+      return;
+    }
+
+    if (target.dataset.cancel) {
+      await onCancelApply?.(target.dataset.cancel);
+    }
+  });
 
   wrapEl.appendChild(list);
 }

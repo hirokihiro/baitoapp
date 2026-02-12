@@ -20,7 +20,7 @@ function isReadByOther(msg, otherRole) {
   return false;
 }
 
-export function renderChat({ wrapEl, meUid, meRole, messages, typing }) {
+export function renderChat({ wrapEl, meUid, meRole, messages, typing, onRetryFailed }) {
   if (!wrapEl) return;
 
   const otherRole = meRole === "user" ? "admin" : "user";
@@ -55,6 +55,7 @@ export function renderChat({ wrapEl, meUid, meRole, messages, typing }) {
 
     const statusEl = document.createElement("span");
     statusEl.className = "chat-status";
+    statusEl.dataset.role = "status";
     if (isMe) {
       if (msg.failed) statusEl.textContent = "送信失敗";
       else if (msg.pending) statusEl.textContent = "送信中…";
@@ -63,6 +64,17 @@ export function renderChat({ wrapEl, meUid, meRole, messages, typing }) {
 
     meta.appendChild(timeEl);
     if (isMe) meta.appendChild(statusEl);
+
+    if (isMe && msg.failed && typeof onRetryFailed === "function") {
+      const retryBtn = document.createElement("button");
+      retryBtn.type = "button";
+      retryBtn.className = "btn chat-retry-btn";
+      retryBtn.textContent = "再送";
+      retryBtn.addEventListener("click", () => {
+        onRetryFailed(msg);
+      });
+      meta.appendChild(retryBtn);
+    }
 
     row.appendChild(bubble);
     row.appendChild(meta);
